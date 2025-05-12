@@ -1,0 +1,68 @@
+using Aplicacion.Core;
+using Aplicacion.Tablas.Salidas.SalidasResponse;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using MediatR;
+using Modelo.Entidades;
+using Persistencia;
+
+namespace Aplicacion.Tablas.Salidas.GetSalidasPagin;
+
+public class GetSalidasPaginQuery
+{
+    public record GetSalidasPaginQueryRequest : IRequest<Result<PagedList<SalidaListaResponse>>>
+    {
+        public GetSalidasPaginRequest? SalidasPaginRequest { get; set; }
+    }
+
+    internal class GetSalidasPaginQueryHandler
+    : IRequestHandler<GetSalidasPaginQueryRequest, Result<PagedList<SalidaListaResponse>>>
+    {
+        private readonly BackendContext _context;
+        private readonly IMapper _mapper;
+
+        public GetSalidasPaginQueryHandler(BackendContext context, IMapper mapper)
+        {
+            _context = context;
+            _mapper = mapper;
+        }
+
+        public async Task<Result<PagedList<SalidaListaResponse>>> Handle(
+            GetSalidasPaginQueryRequest request,
+            CancellationToken cancellationToken
+        )
+        {
+            IQueryable<SalidaEnc> queryable = _context.SalidaEncs!;
+            var predicate = ExpressionBuilder.New<SalidaEnc>();
+
+            if (!string.IsNullOrEmpty(request.SalidasPaginRequest!.SucursalID.ToString()) && request.SalidasPaginRequest.SucursalID != 0)
+            {
+                predicate = predicate
+                .And(y => y.SucursalID == request.SalidasPaginRequest.SucursalID);
+            }
+            if (request.SalidasPaginRequest.FechaInicio != default && request.SalidasPaginRequest.FechaFinal != default)
+            {
+                predicate = predicate.And(y => y.Fecha >= request.SalidasPaginRequest.FechaInicio && y.Fecha <= request.SalidasPaginRequest.FechaFinal.AddDays(1).AddTicks(-1));
+            }
+
+
+
+
+            queryable = queryable.Where(predicate);
+            var salidasQuery = queryable
+            .ProjectTo<SalidaListaResponse>(_mapper.ConfigurationProvider)
+            .AsQueryable();
+            
+            var pagination = await PagedList<SalidaListaResponse>.CreateAsync(
+                salidasQuery,
+                request.SalidasPaginRequest.PageNumber,
+                request.SalidasPaginRequest.PageSize
+            );
+
+            return Result<PagedList<SalidaListaResponse>>.Success(pagination);
+        }
+
+
+    }
+
+}
