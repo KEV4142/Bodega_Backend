@@ -1,5 +1,8 @@
 using System.Net;
 using Aplicacion.Core;
+using Aplicacion.Tablas.Salidas.SalidasResponse;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -19,11 +22,13 @@ public class SalidaEncCreateCommand
         private readonly BackendContext _backendContext;
         private readonly UserManager<Usuario> _userManager;
         private readonly IUserAccessor _user;
-        public SalidaEncCreateCommandHandler(BackendContext backendContext, UserManager<Usuario> userManager, IUserAccessor user)
+        private readonly IMapper _mapper;
+        public SalidaEncCreateCommandHandler(IMapper mapper,BackendContext backendContext, UserManager<Usuario> userManager, IUserAccessor user)
         {
             _backendContext = backendContext;
             _userManager = userManager;
             _user = user;
+            _mapper = mapper;
         }
 
         public async Task<Result<int>> Handle(SalidaEncCreateCommandRequest request, CancellationToken cancellationToken)
@@ -64,6 +69,49 @@ public class SalidaEncCreateCommand
                 }
             }
 
+            var loteListaID = request.salidaEncCreateRequest.SalidasDetalle.Select(linea => linea.LoteID).ToList();
+            var lotesDetalle = await _backendContext.Lotes!.Where(lote => loteListaID.Contains(lote.LoteID)).ToListAsync();
+            var productoCantidadAgrupado = request.salidaEncCreateRequest.SalidasDetalle
+                        .Join(lotesDetalle, detalle => detalle.LoteID, lote => lote.LoteID, (detalle, lote) =>
+                        new { ProductoID = lote.ProductoID, Cantidad = detalle.Cantidad })
+                        .GroupBy(linea => linea.ProductoID)
+                        .Select(grupo => new
+                        {
+                            ProductoID = grupo.Key,
+                            TotalCantidad = grupo.Sum(linea => linea.Cantidad)
+                        }).ToList();
+
+            var lotesValidos = new List<LoteCantidadListado>();
+            foreach (var linea in productoCantidadAgrupado)
+            {
+                int pedido = linea.TotalCantidad;
+
+                var productosListado = await _backendContext.Lotes!
+                .Where(l => l.ProductoID == linea.ProductoID && l.Cantidad > 0)
+                .OrderBy(l => l.FechaVencimiento)
+                .ProjectTo<LoteCantidadListado>(_mapper.ConfigurationProvider)
+                .ToListAsync(cancellationToken);
+
+                foreach (var pro in productosListado)
+                {
+                    if (pedido == 0)
+                    { break; }
+
+                    if (pedido >= pro.Cantidad)
+                    {
+                        lotesValidos.Add(pro);
+                        pedido -= pro.Cantidad;
+                    }
+                    else
+                    {
+                        int nuevaCantidad = pedido;
+                        pedido -= pedido;
+                        pro.Cantidad = nuevaCantidad;
+                        lotesValidos.Add(pro);
+                    }
+                }
+            }
+
             var salidasDetalles = new List<SalidaDet>();
             decimal sumaDetalle = 0;
 
@@ -76,15 +124,32 @@ public class SalidaEncCreateCommand
                     return Result<int>.Failure($"El Lote con ID {detalle.LoteID} no es válido.", HttpStatusCode.BadRequest);
                 }
 
+                if (!lotesValidos.Any(lv => lv.LoteID == detalle.LoteID))
+                {
+                    return Result<int>.Failure($"El Lote con ID {detalle.LoteID} no es válido se tiene que optar a uno que este con fecha de vencimiento mas proxima.", HttpStatusCode.BadRequest);
+                }
+
+                var cantidadPermitida = lotesValidos.FirstOrDefault(lv => lv.LoteID == detalle.LoteID)?.Cantidad;
+
+                if (cantidadPermitida!=detalle.Cantidad)
+                {
+                    return Result<int>.Failure($"El Lote con ID {detalle.LoteID} tiene una cantidad erronea({detalle.Cantidad}), favor verificar, cantidad permitida: {cantidadPermitida}.", HttpStatusCode.BadRequest);
+                }
 
                 sumaDetalle += lote.Costo * detalle.Cantidad;
-                lote.Cantidad=lote.Cantidad-detalle.Cantidad;
+
+                if (detalle.Cantidad > lote.Cantidad)
+                {
+                    return Result<int>.Failure($"No hay suficientes productos en el lote ID {detalle.LoteID}. Disponible: {lote.Cantidad}, solicitado: {detalle.Cantidad}", HttpStatusCode.BadRequest);
+                }
+
+                lote.Cantidad -= detalle.Cantidad;
 
                 salidasDetalles.Add(new SalidaDet
                 {
                     LoteID = detalle.LoteID,
                     Cantidad = detalle.Cantidad,
-                    Lote=lote,
+                    Lote = lote,
                     Salida = salidaEnc
                 });
             }
@@ -97,11 +162,13 @@ public class SalidaEncCreateCommand
                                 .Where(sd => sd.Lote != null)
                                 .SumAsync(sd => (decimal?)(sd.Lote.Costo * sd.Cantidad)) ?? 0m;
 
-            if(total>5000){
+            if (total > 5000)
+            {
                 return Result<int>.Failure($" No se puede ingresar la orden de Salida dado que se ha acumulado y la Sucursal no las ha recibido. ({total}) ", HttpStatusCode.BadRequest);
             }
-            else if((total+sumaDetalle)>5000){
-                return Result<int>.Failure($" No se puede ingresar la orden de Salida actual por sobrepasar mas de lo permitido. ( {total+sumaDetalle} ) ", HttpStatusCode.BadRequest);
+            else if ((total + sumaDetalle) > 5000)
+            {
+                return Result<int>.Failure($" No se puede ingresar la orden de Salida actual por sobrepasar mas de lo permitido. ( {total + sumaDetalle} ) ", HttpStatusCode.BadRequest);
             }
 
             _backendContext.Add(salidaEnc);

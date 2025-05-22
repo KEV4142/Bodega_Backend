@@ -8,3 +8,8 @@ public class SalidaListaResponse{
     public int Cantidad { get; set; }
     public decimal Total { get; set; }
 }
+
+public class LoteCantidadListado{
+    public int LoteID { get; set; }
+    public int Cantidad { get; set; }
+} 

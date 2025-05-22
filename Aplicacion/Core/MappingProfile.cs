@@ -14,6 +14,7 @@ public class MappingProfile : Profile
         CreateMap<Producto, ProductoResponse>();
         CreateMap<Lote, LoteCompletoResponse>()
             .ForMember(dest => dest.Descripcion, opt => opt.MapFrom(src => src.Productos.Descripcion));
+        CreateMap<Lote, LoteCantidadListado>();
         CreateMap<SalidaEnc, SalidaListaResponse>()
             .ForMember(dest => dest.Cantidad, opt => opt.MapFrom(src => src.SalidaDets.Sum(sd => sd.Cantidad)))
             .ForMember(dest => dest.Total, opt => opt.MapFrom(src => src.SalidaDets.Sum(sd => sd.Cantidad * sd.Lote.Costo)))

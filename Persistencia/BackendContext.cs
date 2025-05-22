@@ -44,6 +44,11 @@ public partial class BackendContext : IdentityDbContext<Usuario>
                 .HasForeignKey(d => d.ProductoID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fkLotesProductoID");
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ckLotesCantidad", "Cantidad > -1");
+                t.HasCheckConstraint("ckLotesCosto", "Costo > 0");
+            });
         });
 
         modelBuilder.Entity<Producto>(entity =>
@@ -69,11 +74,16 @@ public partial class BackendContext : IdentityDbContext<Usuario>
                 .HasForeignKey(d => d.LoteID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fkSalidaDetLoteID");
+                //.IsRequired(); DeleteBehavior.Restrict
 
             entity.HasOne(d => d.Salida).WithMany(p => p.SalidaDets)
                 .HasForeignKey(d => d.SalidaID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fkSalidaDetSalidaID");
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ckSalidaDetCantidad", "Cantidad > 0");
+            });
         });
 
         modelBuilder.Entity<SalidaEnc>(entity =>

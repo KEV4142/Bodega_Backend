@@ -11,7 +11,7 @@ public class PagingParams
         set => _pageSize = (value > MaxPageSize) ? MaxPageSize : value;
         // set => _pageSize = value;
     }
-    // public string? OrderBy { get; set; }
+    public string? OrderBy { get; set; }
 
-    // public bool? OrderAsc { get; set; } = true;
+    public bool? OrderAsc { get; set; } = true;
 }

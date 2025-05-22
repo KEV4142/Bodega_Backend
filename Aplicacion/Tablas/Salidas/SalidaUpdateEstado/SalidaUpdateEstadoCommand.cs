@@ -36,6 +36,16 @@ public class SalidaUpdateEstadoCommand
                 return Result<int>.Failure("No se encontró el UsuarioID en la Autorizacion.", HttpStatusCode.Unauthorized);
             }
 
+            if (usuarioID is not null)
+            {
+                var appUsuario = await _userManager.Users!
+                .FirstOrDefaultAsync(x => x.Id == usuarioID);
+                if (appUsuario is null)
+                {
+                    return Result<int>.Failure("No se encontro el Usuario.", HttpStatusCode.NotFound);
+                }
+            }
+
             var salidaID = request.SalidaID;
             var salida = await _context.SalidaEncs!.FirstOrDefaultAsync(x => x.SalidaID == salidaID);
             
@@ -43,7 +53,10 @@ public class SalidaUpdateEstadoCommand
             {
                 return Result<int>.Failure("La Orden de Salida no existe.", HttpStatusCode.NotFound);
             }
-
+            if (salida.Estado.Equals("R") || salida.Estado.Equals("r"))
+            {
+                return Result<int>.Failure("La Orden de Salida ya ha sido recibida.", HttpStatusCode.BadRequest);
+            }
             salida.Estado = request.salidaUpdateEstadoRequest.Estado!.ToUpper();
             salida.FechaRecibido = DateTime.Now;
             salida.UsuarioRecibe = usuarioID;
