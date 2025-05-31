@@ -22,13 +22,19 @@ public static class DataSeed
 
             var userManager = service.GetRequiredService<UserManager<Usuario>>();
 
+            var roleManager = service.GetRequiredService<RoleManager<IdentityRole>>();
+
+            var adminRole = await roleManager.FindByNameAsync(CustomRoles.ADMINBODEGA);
+            var clientRole = await roleManager.FindByNameAsync(CustomRoles.CLIENT);
+
             if (!userManager.Users.Any())
             {
                 var userAdmin = new Usuario
                 {
                     NombreCompleto = "Juan Bautista",
                     UserName = "JBAUTISTA",
-                    Email = "ADMINISTRADOR.PRUEBA@GMAIL.COM"
+                    Email = "ADMINISTRADOR.PRUEBA@GMAIL.COM",
+                    RoleId = adminRole?.Id
                 };
 
                 await userManager.CreateAsync(userAdmin, "Password123$");
@@ -38,7 +44,8 @@ public static class DataSeed
                 {
                     NombreCompleto = "Juan Perez",
                     UserName = "JPEREZ",
-                    Email = "juan.perez@gmail.com"
+                    Email = "juan.perez@gmail.com",
+                    RoleId = clientRole?.Id
                 };
 
                 await userManager.CreateAsync(userClient, "Password123$");

@@ -84,32 +84,20 @@ public class SalidaEncCreateCommand
             var lotesValidos = new List<LoteCantidadListado>();
             foreach (var linea in productoCantidadAgrupado)
             {
-                int pedido = linea.TotalCantidad;
-
                 var productosListado = await _backendContext.Lotes!
                 .Where(l => l.ProductoID == linea.ProductoID && l.Cantidad > 0)
                 .OrderBy(l => l.FechaVencimiento)
                 .ProjectTo<LoteCantidadListado>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
-                foreach (var pro in productosListado)
-                {
-                    if (pedido == 0)
-                    { break; }
+                var seleccionados = DistribucionLotes.Distribuir(
+                    productosListado,
+                    linea.TotalCantidad,
+                    l => l.Cantidad,
+                    (l, nuevaCantidad) => l.Cantidad = nuevaCantidad
+                );
 
-                    if (pedido >= pro.Cantidad)
-                    {
-                        lotesValidos.Add(pro);
-                        pedido -= pro.Cantidad;
-                    }
-                    else
-                    {
-                        int nuevaCantidad = pedido;
-                        pedido -= pedido;
-                        pro.Cantidad = nuevaCantidad;
-                        lotesValidos.Add(pro);
-                    }
-                }
+                lotesValidos.AddRange(seleccionados);
             }
 
             var salidasDetalles = new List<SalidaDet>();
@@ -150,6 +138,7 @@ public class SalidaEncCreateCommand
                     LoteID = detalle.LoteID,
                     Cantidad = detalle.Cantidad,
                     Lote = lote,
+                    Costo = lote.Costo,
                     Salida = salidaEnc
                 });
             }

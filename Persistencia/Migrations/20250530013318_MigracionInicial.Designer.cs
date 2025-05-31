@@ -12,8 +12,8 @@ using Persistencia;
 namespace Persistencia.Migrations
 {
     [DbContext(typeof(BackendContext))]
-    [Migration("20250512201255_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20250530013318_MigracionInicial")]
+    partial class MigracionInicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -184,9 +184,7 @@ namespace Persistencia.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Costo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(5, 2)")
-                        .HasDefaultValueSql("('0.00')");
+                        .HasColumnType("decimal(5, 2)");
 
                     b.Property<DateOnly>("FechaVencimiento")
                         .HasColumnType("date");
@@ -199,7 +197,12 @@ namespace Persistencia.Migrations
 
                     b.HasIndex("ProductoID");
 
-                    b.ToTable("Lotes");
+                    b.ToTable("Lotes", t =>
+                        {
+                            t.HasCheckConstraint("ckLotesCantidad", "Cantidad > -1");
+
+                            t.HasCheckConstraint("ckLotesCosto", "Costo > 0");
+                        });
 
                     b.HasData(
                         new
@@ -293,7 +296,10 @@ namespace Persistencia.Migrations
                     b.HasKey("ProductoID")
                         .HasName("pkProductosID");
 
-                    b.ToTable("Productos");
+                    b.ToTable("Productos", t =>
+                        {
+                            t.HasCheckConstraint("ckProductosEstado", "Estado IN('A','I','B')");
+                        });
 
                     b.HasData(
                         new
@@ -315,29 +321,29 @@ namespace Persistencia.Migrations
 
             modelBuilder.Entity("Modelo.Entidades.SalidaDet", b =>
                 {
-                    b.Property<int>("SalidaDetID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SalidaDetID"));
-
-                    b.Property<int>("Cantidad")
+                    b.Property<int>("SalidaID")
                         .HasColumnType("int");
 
                     b.Property<int>("LoteID")
                         .HasColumnType("int");
 
-                    b.Property<int>("SalidaID")
+                    b.Property<int>("Cantidad")
                         .HasColumnType("int");
 
-                    b.HasKey("SalidaDetID")
+                    b.Property<decimal>("Costo")
+                        .HasColumnType("decimal(5, 2)");
+
+                    b.HasKey("SalidaID", "LoteID")
                         .HasName("pkSalidaDetID");
 
                     b.HasIndex("LoteID");
 
-                    b.HasIndex("SalidaID");
+                    b.ToTable("SalidaDet", null, t =>
+                        {
+                            t.HasCheckConstraint("ckSalidaDetCantidad", "Cantidad > 0");
 
-                    b.ToTable("SalidaDet", (string)null);
+                            t.HasCheckConstraint("ckSalidaDetCosto", "Costo > 0");
+                        });
                 });
 
             modelBuilder.Entity("Modelo.Entidades.SalidaEnc", b =>
@@ -387,7 +393,12 @@ namespace Persistencia.Migrations
 
                     b.HasIndex("UsuarioRecibe");
 
-                    b.ToTable("SalidaEnc", (string)null);
+                    b.ToTable("SalidaEnc", null, t =>
+                        {
+                            t.HasCheckConstraint("ckSalidaEncEstado", "Estado IN('E','R','B')");
+
+                            t.HasCheckConstraint("ckSalidaEncFechaRecibido", "FechaRecibido IS NULL OR Fecha < FechaRecibido");
+                        });
                 });
 
             modelBuilder.Entity("Modelo.Entidades.Sucursal", b =>
@@ -421,7 +432,10 @@ namespace Persistencia.Migrations
                     b.HasKey("SucursalID")
                         .HasName("pkSucursalID");
 
-                    b.ToTable("Sucursales");
+                    b.ToTable("Sucursales", t =>
+                        {
+                            t.HasCheckConstraint("ckSucursalesEstado", "Estado IN('A','I','B')");
+                        });
 
                     b.HasData(
                         new
@@ -469,6 +483,14 @@ namespace Persistencia.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(1)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1)")
+                        .HasDefaultValue("A");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -496,6 +518,9 @@ namespace Persistencia.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("RoleId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -516,7 +541,12 @@ namespace Persistencia.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("AspNetUsers", (string)null);
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUsers", null, t =>
+                        {
+                            t.HasCheckConstraint("ckUsuarioEstado", "Estado IN('A','I','B')");
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -572,13 +602,14 @@ namespace Persistencia.Migrations
 
             modelBuilder.Entity("Modelo.Entidades.Lote", b =>
                 {
-                    b.HasOne("Modelo.Entidades.Producto", "Productos")
+                    b.HasOne("Modelo.Entidades.Producto", "Producto")
                         .WithMany("Lotes")
                         .HasForeignKey("ProductoID")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fkLotesProductoID");
 
-                    b.Navigation("Productos");
+                    b.Navigation("Producto");
                 });
 
             modelBuilder.Entity("Modelo.Entidades.SalidaDet", b =>
@@ -586,12 +617,14 @@ namespace Persistencia.Migrations
                     b.HasOne("Modelo.Entidades.Lote", "Lote")
                         .WithMany("SalidaDets")
                         .HasForeignKey("LoteID")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fkSalidaDetLoteID");
 
                     b.HasOne("Modelo.Entidades.SalidaEnc", "Salida")
                         .WithMany("SalidaDets")
                         .HasForeignKey("SalidaID")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fkSalidaDetSalidaID");
 
@@ -605,12 +638,14 @@ namespace Persistencia.Migrations
                     b.HasOne("Modelo.Entidades.Sucursal", "Sucursales")
                         .WithMany("SalidaEncs")
                         .HasForeignKey("SucursalID")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fkSalidaEncSucursalID");
 
                     b.HasOne("Modelo.Entidades.Usuario", "Usuario")
                         .WithMany("SalidasEnviadas")
                         .HasForeignKey("UsuarioID")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fkSalidaEncUsuarioID");
 
@@ -624,6 +659,16 @@ namespace Persistencia.Migrations
                     b.Navigation("Usuario");
 
                     b.Navigation("UsuarioRecibeRelacion");
+                });
+
+            modelBuilder.Entity("Modelo.Entidades.Usuario", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Modelo.Entidades.Lote", b =>

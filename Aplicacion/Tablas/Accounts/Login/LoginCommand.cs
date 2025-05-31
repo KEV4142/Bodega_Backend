@@ -34,6 +34,7 @@ public class LoginCommand
         )
         {
             var user = await _userManager.Users
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(x => x.Email == request.loginRequest.Email);
 
             if (user is null)
@@ -49,7 +50,7 @@ public class LoginCommand
                 return Result<Profile>.Failure("Las credenciales son incorrectas");
             }
             var tipo="";
-            var roleNames = await _userManager.GetRolesAsync(user);
+            /* var roleNames = await _userManager.GetRolesAsync(user);
             if (roleNames.Contains(CustomRoles.ADMINBODEGA))
             {
                 tipo="Administrador";
@@ -61,7 +62,14 @@ public class LoginCommand
             else
             {
                 tipo="Sin Asignacion de Rol.";
-            }
+            } */
+            tipo = user.Role?.Name switch
+            {
+                CustomRoles.ADMINBODEGA => "Administrador",
+                CustomRoles.CLIENT => "Operador",
+                _ => "Sin Asignacion de Rol."
+            };
+
             var profile = new Profile
             {
                 Email = user.Email,

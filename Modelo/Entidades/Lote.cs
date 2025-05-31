@@ -12,7 +12,7 @@ public partial class Lote
 
     public int Cantidad { get; set; }
 
-    public virtual Producto Productos { get; set; } = null!;
+    public virtual Producto Producto { get; set; } = null!;
 
     public virtual ICollection<SalidaDet> SalidaDets { get; set; } = new List<SalidaDet>();
 }

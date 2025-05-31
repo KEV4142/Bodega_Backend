@@ -19,9 +19,9 @@ public class TokenService : ITokenService
         _userManager = userManager;
     }
 
-    public async Task<string> CreateToken(Usuario usuario)
+    public Task<string> CreateToken(Usuario usuario)
     {
-        var roles = await _userManager.GetRolesAsync(usuario);
+        // var roles = await _userManager.GetRolesAsync(usuario);
 
         var claims = new List<Claim>
         {
@@ -30,14 +30,17 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Email, usuario.Email!)
         };
 
-        foreach (var role in roles)
+        /* foreach (var role in roles)
         {
             if (role is not null)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
+        } */
+        if (usuario.Role?.Name is not null)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, usuario.Role.Name));
         }
-
         var creds = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["TokenKey"]!)),
             SecurityAlgorithms.HmacSha256
@@ -53,7 +56,8 @@ public class TokenService : ITokenService
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
-        return tokenHandler.WriteToken(token);
+        //return tokenHandler.WriteToken(token);
+        return Task.FromResult(tokenHandler.WriteToken(token));
     }
 
 }

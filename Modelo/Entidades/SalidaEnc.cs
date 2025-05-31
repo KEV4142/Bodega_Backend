@@ -1,4 +1,4 @@
-﻿namespace Modelo.Entidades;
+﻿﻿namespace Modelo.Entidades;
 
 public partial class SalidaEnc
 {

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistencia.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class MigracionInicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,32 +28,6 @@ namespace Persistencia.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AspNetUsers",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    NombreCompleto = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Productos",
                 columns: table => new
                 {
@@ -65,6 +39,7 @@ namespace Persistencia.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pkProductosID", x => x.ProductoID);
+                    table.CheckConstraint("ckProductosEstado", "Estado IN('A','I','B')");
                 });
 
             migrationBuilder.CreateTable(
@@ -80,6 +55,7 @@ namespace Persistencia.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pkSucursalID", x => x.SucursalID);
+                    table.CheckConstraint("ckSucursalesEstado", "Estado IN('A','I','B')");
                 });
 
             migrationBuilder.CreateTable(
@@ -101,6 +77,65 @@ namespace Persistencia.Migrations
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUsers",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NombreCompleto = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Estado = table.Column<string>(type: "varchar(1)", unicode: false, maxLength: 1, nullable: false, defaultValue: "A"),
+                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                    table.CheckConstraint("ckUsuarioEstado", "Estado IN('A','I','B')");
+                    table.ForeignKey(
+                        name: "FK_AspNetUsers_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Lotes",
+                columns: table => new
+                {
+                    LoteID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductoID = table.Column<int>(type: "int", nullable: false),
+                    FechaVencimiento = table.Column<DateOnly>(type: "date", nullable: false),
+                    Costo = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    Cantidad = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pkLotesID", x => x.LoteID);
+                    table.CheckConstraint("ckLotesCantidad", "Cantidad > -1");
+                    table.CheckConstraint("ckLotesCosto", "Costo > 0");
+                    table.ForeignKey(
+                        name: "fkLotesProductoID",
+                        column: x => x.ProductoID,
+                        principalTable: "Productos",
+                        principalColumn: "ProductoID",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -189,27 +224,6 @@ namespace Persistencia.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Lotes",
-                columns: table => new
-                {
-                    LoteID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductoID = table.Column<int>(type: "int", nullable: false),
-                    FechaVencimiento = table.Column<DateOnly>(type: "date", nullable: false),
-                    Costo = table.Column<decimal>(type: "decimal(5,2)", nullable: false, defaultValueSql: "('0.00')"),
-                    Cantidad = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pkLotesID", x => x.LoteID);
-                    table.ForeignKey(
-                        name: "fkLotesProductoID",
-                        column: x => x.ProductoID,
-                        principalTable: "Productos",
-                        principalColumn: "ProductoID");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "SalidaEnc",
                 columns: table => new
                 {
@@ -225,16 +239,20 @@ namespace Persistencia.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pkSalidaEncID", x => x.SalidaID);
+                    table.CheckConstraint("ckSalidaEncEstado", "Estado IN('E','R','B')");
+                    table.CheckConstraint("ckSalidaEncFechaRecibido", "FechaRecibido IS NULL OR Fecha < FechaRecibido");
                     table.ForeignKey(
                         name: "fkSalidaEncSucursalID",
                         column: x => x.SucursalID,
                         principalTable: "Sucursales",
-                        principalColumn: "SucursalID");
+                        principalColumn: "SucursalID",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "fkSalidaEncUsuarioID",
                         column: x => x.UsuarioID,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "fkSalidaEncUsuarioRecibe",
                         column: x => x.UsuarioRecibe,
@@ -246,25 +264,28 @@ namespace Persistencia.Migrations
                 name: "SalidaDet",
                 columns: table => new
                 {
-                    SalidaDetID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
                     SalidaID = table.Column<int>(type: "int", nullable: false),
                     LoteID = table.Column<int>(type: "int", nullable: false),
-                    Cantidad = table.Column<int>(type: "int", nullable: false)
+                    Cantidad = table.Column<int>(type: "int", nullable: false),
+                    Costo = table.Column<decimal>(type: "decimal(5,2)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pkSalidaDetID", x => x.SalidaDetID);
+                    table.PrimaryKey("pkSalidaDetID", x => new { x.SalidaID, x.LoteID });
+                    table.CheckConstraint("ckSalidaDetCantidad", "Cantidad > 0");
+                    table.CheckConstraint("ckSalidaDetCosto", "Costo > 0");
                     table.ForeignKey(
                         name: "fkSalidaDetLoteID",
                         column: x => x.LoteID,
                         principalTable: "Lotes",
-                        principalColumn: "LoteID");
+                        principalColumn: "LoteID",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "fkSalidaDetSalidaID",
                         column: x => x.SalidaID,
                         principalTable: "SalidaEnc",
-                        principalColumn: "SalidaID");
+                        principalColumn: "SalidaID",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.InsertData(
@@ -345,6 +366,11 @@ namespace Persistencia.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_RoleId",
+                table: "AspNetUsers",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -360,11 +386,6 @@ namespace Persistencia.Migrations
                 name: "IX_SalidaDet_LoteID",
                 table: "SalidaDet",
                 column: "LoteID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalidaDet_SalidaID",
-                table: "SalidaDet",
-                column: "SalidaID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalidaEnc_SucursalID",
@@ -404,9 +425,6 @@ namespace Persistencia.Migrations
                 name: "SalidaDet");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
-
-            migrationBuilder.DropTable(
                 name: "Lotes");
 
             migrationBuilder.DropTable(
@@ -420,6 +438,9 @@ namespace Persistencia.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
         }
     }
 }

@@ -13,7 +13,7 @@ public class MappingProfile : Profile
         CreateMap<Sucursal, SucursalResponse>();
         CreateMap<Producto, ProductoResponse>();
         CreateMap<Lote, LoteCompletoResponse>()
-            .ForMember(dest => dest.Descripcion, opt => opt.MapFrom(src => src.Productos.Descripcion));
+            .ForMember(dest => dest.Descripcion, opt => opt.MapFrom(src => src.Producto.Descripcion));
         CreateMap<Lote, LoteCantidadListado>();
         CreateMap<SalidaEnc, SalidaListaResponse>()
             .ForMember(dest => dest.Cantidad, opt => opt.MapFrom(src => src.SalidaDets.Sum(sd => sd.Cantidad)))

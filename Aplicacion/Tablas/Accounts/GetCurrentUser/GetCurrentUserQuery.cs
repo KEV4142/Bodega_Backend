@@ -29,6 +29,7 @@ public class GetCurrentUserQuery
             )
         {
             var user = await _userManager.Users
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(x => x.Email == request.getCurrentUserRequest.Email);
 
             if (user is null)
@@ -36,7 +37,7 @@ public class GetCurrentUserQuery
                 return Result<Profile>.Failure("No se encontro el usuario.", HttpStatusCode.NotFound);
             }
             var tipo="";
-            var roleNames = await _userManager.GetRolesAsync(user);
+            /* var roleNames = await _userManager.GetRolesAsync(user);
             if (roleNames.Contains(CustomRoles.ADMINBODEGA))
             {
                 tipo="Administrador";
@@ -48,7 +49,13 @@ public class GetCurrentUserQuery
             else
             {
                 tipo="Sin Asignacion de Rol.";
-            }
+            } */
+            tipo = user.Role?.Name switch
+            {
+                CustomRoles.ADMINBODEGA => "Administrador",
+                CustomRoles.CLIENT => "Operador",
+                _ => "Sin Asignacion de Rol."
+            };
             var profile = new Profile
             {
                 Email = user.Email,

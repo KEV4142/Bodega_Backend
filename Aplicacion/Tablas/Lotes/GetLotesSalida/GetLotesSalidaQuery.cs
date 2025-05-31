@@ -54,24 +54,14 @@ public class GetLotesSalidaQuery
                 .ToListAsync(cancellationToken);
 
             var productosSalida = new List<LoteCompletoResponse>();
-            int pedido = request.getLotesSalidaRequest.Cantidad;
-            foreach (var pro in productosListado)
-            {
-                if (pedido == 0)
-                    {break;}
 
-                if (pedido >= pro.Cantidad)
-                {
-                    productosSalida.Add(pro);
-                    pedido-=pro.Cantidad;
-                }
-                else{
-                    int nuevaCantidad=pedido;
-                    pedido-=pedido;
-                    pro.Cantidad=nuevaCantidad;
-                    productosSalida.Add(pro);
-                }               
-            }
+            productosSalida = DistribucionLotes.Distribuir(
+                                productosListado,
+                                request.getLotesSalidaRequest.Cantidad,
+                                l => l.Cantidad,
+                                (l, nuevaCantidad) => l.Cantidad = nuevaCantidad
+                            );
+
             return Result<List<LoteCompletoResponse>>.Success(productosSalida);
         }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Modelo.Custom;
@@ -37,18 +37,18 @@ public partial class BackendContext : IdentityDbContext<Usuario>
             entity.HasKey(e => e.LoteID).HasName("pkLotesID");
 
             entity.Property(e => e.Costo)
-                .HasDefaultValueSql("('0.00')")
                 .HasColumnType("decimal(5, 2)");
 
-            entity.HasOne(d => d.Productos).WithMany(p => p.Lotes)
+            entity.HasOne(d => d.Producto).WithMany(p => p.Lotes)
                 .HasForeignKey(d => d.ProductoID)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fkLotesProductoID");
-            entity.ToTable(t =>
-            {
-                t.HasCheckConstraint("ckLotesCantidad", "Cantidad > -1");
-                t.HasCheckConstraint("ckLotesCosto", "Costo > 0");
-            });
+
+            entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("ckLotesCantidad", "Cantidad > -1");
+                    tb.HasCheckConstraint("ckLotesCosto", "Costo > 0");
+                });
         });
 
         modelBuilder.Entity<Producto>(entity =>
@@ -62,28 +62,36 @@ public partial class BackendContext : IdentityDbContext<Usuario>
                 .HasMaxLength(1)
                 .IsUnicode(false)
                 .HasDefaultValue("A");
+            
+            entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("ckProductosEstado", "Estado IN('A','I','B')");
+                });
         });
 
         modelBuilder.Entity<SalidaDet>(entity =>
         {
-            entity.HasKey(e => e.SalidaDetID).HasName("pkSalidaDetID");
+            entity.HasKey(e => new { e.SalidaID, e.LoteID }).HasName("pkSalidaDetID");
 
             entity.ToTable("SalidaDet");
 
+            entity.Property(e => e.Costo).HasColumnType("decimal(5, 2)");
+
             entity.HasOne(d => d.Lote).WithMany(p => p.SalidaDets)
                 .HasForeignKey(d => d.LoteID)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fkSalidaDetLoteID");
-                //.IsRequired(); DeleteBehavior.Restrict
 
             entity.HasOne(d => d.Salida).WithMany(p => p.SalidaDets)
                 .HasForeignKey(d => d.SalidaID)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fkSalidaDetSalidaID");
-            entity.ToTable(t =>
-            {
-                t.HasCheckConstraint("ckSalidaDetCantidad", "Cantidad > 0");
-            });
+
+            entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("ckSalidaDetCantidad", "Cantidad > 0");
+                    tb.HasCheckConstraint("ckSalidaDetCosto", "Costo > 0");
+                });
         });
 
         modelBuilder.Entity<SalidaEnc>(entity =>
@@ -107,17 +115,22 @@ public partial class BackendContext : IdentityDbContext<Usuario>
 
             entity.HasOne(d => d.Sucursales).WithMany(p => p.SalidaEncs)
                 .HasForeignKey(d => d.SucursalID)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fkSalidaEncSucursalID");
-
             entity.HasOne(d => d.Usuario).WithMany(p => p.SalidasEnviadas)
                 .HasForeignKey(d => d.UsuarioID)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fkSalidaEncUsuarioID");
 
             entity.HasOne(d => d.UsuarioRecibeRelacion).WithMany(p => p.SalidasRecibidas)
                 .HasForeignKey(d => d.UsuarioRecibe)
                 .HasConstraintName("fkSalidaEncUsuarioRecibe");
+
+            entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("ckSalidaEncEstado", "Estado IN('E','R','B')");
+                    tb.HasCheckConstraint("ckSalidaEncFechaRecibido", "FechaRecibido IS NULL OR Fecha < FechaRecibido");
+                });
         });
 
         modelBuilder.Entity<Sucursal>(entity =>
@@ -134,8 +147,24 @@ public partial class BackendContext : IdentityDbContext<Usuario>
                 .HasMaxLength(1)
                 .IsUnicode(false)
                 .HasDefaultValue("A");
+            entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("ckSucursalesEstado", "Estado IN('A','I','B')");
+                });
         });
 
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.HasOne(u => u.Role).WithMany().HasForeignKey(u => u.RoleId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.Estado)
+                .HasMaxLength(1)
+                .IsUnicode(false)
+                .HasDefaultValue("A");
+            entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("ckUsuarioEstado", "Estado IN('A','I','B')");
+                });
+        });         
 
         modelBuilder.Entity<IdentityRole>().HasData(
                 new IdentityRole
