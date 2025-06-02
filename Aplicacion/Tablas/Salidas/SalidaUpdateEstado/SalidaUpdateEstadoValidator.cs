@@ -9,7 +9,6 @@ public class SalidaUpdateEstadoValidator : AbstractValidator<SalidaUpdateEstadoR
             .Cascade(CascadeMode.Stop)
             .NotNull().WithMessage("Campo Estado es Obligatorio.")
             .NotEmpty().WithMessage("El campo Estado se encuentra en blanco.")
-            .Must(estado => estado == "r" || estado == "R" )
-            .WithMessage("El Estado debe ser R.");
+            .Must(estado => estado == "r" || estado == "R" ).WithMessage("El Estado debe ser R.");
     }
 }

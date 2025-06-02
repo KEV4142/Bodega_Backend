@@ -15,18 +15,18 @@ public class SalidaUpdateEstadoCommand
 
     internal class SalidaUpdateEstadoCommandHandler : IRequestHandler<SalidaUpdateEstadoCommandRequest, Result<int>>
     {
-        private readonly BackendContext _context;
+        private readonly BackendContext _backendContext;
         private readonly UserManager<Usuario> _userManager;
         private readonly IUserAccessor _user;
 
         public SalidaUpdateEstadoCommandHandler(BackendContext context, UserManager<Usuario> userManager, IUserAccessor user)
         {
-            _context = context;
+            _backendContext = context;
             _userManager = userManager;
             _user = user;
         }
         public async Task<Result<int>> Handle(
-            SalidaUpdateEstadoCommandRequest request, 
+            SalidaUpdateEstadoCommandRequest request,
             CancellationToken cancellationToken
         )
         {
@@ -36,37 +36,40 @@ public class SalidaUpdateEstadoCommand
                 return Result<int>.Failure("No se encontró el UsuarioID en la Autorizacion.", HttpStatusCode.Unauthorized);
             }
 
-            if (usuarioID is not null)
+            var appUsuario = await _userManager.Users!.FirstOrDefaultAsync(x => x.Id == usuarioID);
+            if (appUsuario is null)
             {
-                var appUsuario = await _userManager.Users!
-                .FirstOrDefaultAsync(x => x.Id == usuarioID);
-                if (appUsuario is null)
-                {
-                    return Result<int>.Failure("No se encontro el Usuario.", HttpStatusCode.NotFound);
-                }
+                return Result<int>.Failure("No se encontro el Usuario.", HttpStatusCode.NotFound);
             }
 
             var salidaID = request.SalidaID;
-            var salida = await _context.SalidaEncs!.FirstOrDefaultAsync(x => x.SalidaID == salidaID);
-            
+            var salida = await _backendContext.SalidaEncs!.FirstOrDefaultAsync(x => x.SalidaID == salidaID);
+
             if (salida is null)
             {
                 return Result<int>.Failure("La Orden de Salida no existe.", HttpStatusCode.NotFound);
             }
-            if (salida.Estado.Equals("R") || salida.Estado.Equals("r"))
+            if (salida.Estado.Equals("R", StringComparison.OrdinalIgnoreCase))
             {
                 return Result<int>.Failure("La Orden de Salida ya ha sido recibida.", HttpStatusCode.BadRequest);
             }
             salida.Estado = request.salidaUpdateEstadoRequest.Estado!.ToUpper();
             salida.FechaRecibido = DateTime.Now;
             salida.UsuarioRecibe = usuarioID;
+            
+            try
+            {
+                using var transaction = await _backendContext.Database.BeginTransactionAsync(cancellationToken);
 
-            _context.Entry(salida).State = EntityState.Modified;
-            var resultado = await _context.SaveChangesAsync() > 0;
-
-            return resultado 
-                        ? Result<int>.Success(salida.SalidaID)
-                        : Result<int>.Failure("Errores en la actualizacion del estado de la Orden Salida.", HttpStatusCode.BadRequest);
+                await _backendContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return Result<int>.Failure("Errores en la actualizacion del estado de la Orden Salida.", HttpStatusCode.BadRequest);
+            }
+            return Result<int>.Success(salida.SalidaID);
         }
     }
 

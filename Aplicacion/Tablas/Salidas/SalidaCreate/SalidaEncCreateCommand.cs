@@ -59,15 +59,13 @@ public class SalidaEncCreateCommand
                 salidaEnc.Sucursales = sucursal;
             }
 
-            if (usuarioID is not null)
-            {
-                var appUsuario = await _userManager.Users!
+            var appUsuario = await _userManager.Users!
                 .FirstOrDefaultAsync(x => x.Id == usuarioID);
-                if (appUsuario is null)
-                {
-                    return Result<int>.Failure("No se encontro el Usuario.", HttpStatusCode.NotFound);
-                }
+            if (appUsuario is null)
+            {
+                return Result<int>.Failure("No se encontro el Usuario.", HttpStatusCode.NotFound);
             }
+
 
             var loteListaID = request.salidaEncCreateRequest.SalidasDetalle.Select(linea => linea.LoteID).ToList();
             var lotesDetalle = await _backendContext.Lotes!.Where(lote => loteListaID.Contains(lote.LoteID)).ToListAsync();
@@ -105,8 +103,7 @@ public class SalidaEncCreateCommand
 
             foreach (var detalle in request.salidaEncCreateRequest.SalidasDetalle)
             {
-                var lote = await _backendContext.Lotes!
-                    .FirstOrDefaultAsync(c => c.LoteID == detalle.LoteID);
+                var lote = lotesDetalle.FirstOrDefault(linea => linea.LoteID == detalle.LoteID);
                 if (lote is null)
                 {
                     return Result<int>.Failure($"El Lote con ID {detalle.LoteID} no es válido.", HttpStatusCode.BadRequest);
@@ -119,7 +116,7 @@ public class SalidaEncCreateCommand
 
                 var cantidadPermitida = lotesValidos.FirstOrDefault(lv => lv.LoteID == detalle.LoteID)?.Cantidad;
 
-                if (cantidadPermitida!=detalle.Cantidad)
+                if (cantidadPermitida != detalle.Cantidad)
                 {
                     return Result<int>.Failure($"El Lote con ID {detalle.LoteID} tiene una cantidad erronea({detalle.Cantidad}), favor verificar, cantidad permitida: {cantidadPermitida}.", HttpStatusCode.BadRequest);
                 }
@@ -161,10 +158,20 @@ public class SalidaEncCreateCommand
             }
 
             _backendContext.Add(salidaEnc);
-            var resultado = await _backendContext.SaveChangesAsync(cancellationToken) > 0;
-            return resultado
-                        ? Result<int>.Success(salidaEnc.SalidaID)
-                        : Result<int>.Failure("No se pudo insertar el registro de la Orden ni su Detalle.", HttpStatusCode.BadRequest);
+
+            try
+            {
+                using var transaction = await _backendContext.Database.BeginTransactionAsync(cancellationToken);
+
+                await _backendContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return Result<int>.Failure("No se pudo insertar el registro de la Orden ni su Detalle.", HttpStatusCode.BadRequest);
+            }
+            return Result<int>.Success(salidaEnc.SalidaID);
         }
     }
 
