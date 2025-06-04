@@ -1,11 +1,10 @@
 using Aplicacion.Core;
-using Seguridad.Interfaces;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Modelo.Entidades;
-using Modelo.Custom;
+using Aplicacion.Interface;
 
 
 namespace Aplicacion.Tablas.Accounts.Login;
@@ -17,15 +16,15 @@ public class LoginCommand
         : IRequestHandler<LoginCommandRequest, Result<Profile>>
     {
         private readonly UserManager<Usuario> _userManager;
-        private readonly ITokenService _tokenService;
+        private readonly IProfileFactory _profileFactory;
 
         public LoginCommandHandler(
             UserManager<Usuario> userManager,
-            ITokenService tokenService
+            IProfileFactory profileFactory
         )
         {
             _userManager = userManager;
-            _tokenService = tokenService;
+            _profileFactory = profileFactory;
         }
 
         public async Task<Result<Profile>> Handle(
@@ -35,7 +34,7 @@ public class LoginCommand
         {
             var user = await _userManager.Users
             .Include(u => u.Role)
-            .FirstOrDefaultAsync(x => x.Email == request.loginRequest.Email);
+            .FirstOrDefaultAsync(x => x.Email!.ToLower() == request.loginRequest.Email!.ToLower());
 
             if (user is null)
             {
@@ -49,35 +48,8 @@ public class LoginCommand
             {
                 return Result<Profile>.Failure("Las credenciales son incorrectas");
             }
-            var tipo="";
-            /* var roleNames = await _userManager.GetRolesAsync(user);
-            if (roleNames.Contains(CustomRoles.ADMINBODEGA))
-            {
-                tipo="Administrador";
-            }
-            else if (roleNames.Contains(CustomRoles.CLIENT))
-            {
-                tipo="Operador";
-            }
-            else
-            {
-                tipo="Sin Asignacion de Rol.";
-            } */
-            tipo = user.Role?.Name switch
-            {
-                CustomRoles.ADMINBODEGA => "Administrador",
-                CustomRoles.CLIENT => "Operador",
-                _ => "Sin Asignacion de Rol."
-            };
 
-            var profile = new Profile
-            {
-                Email = user.Email,
-                NombreCompleto = user.NombreCompleto,
-                Username = user.UserName,
-                Token = await _tokenService.CreateToken(user),
-                Tipo=tipo
-            };
+            var profile = await _profileFactory.CrearAsync(user);
 
             return Result<Profile>.Success(profile);
         }

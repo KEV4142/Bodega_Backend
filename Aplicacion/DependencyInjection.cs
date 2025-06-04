@@ -1,4 +1,6 @@
 using Aplicacion.Core;
+using Aplicacion.Interface;
+using Aplicacion.Service;
 using Aplicacion.Tablas.Accounts.Login;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -22,6 +24,14 @@ public static class DependencyInjection
         // services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddAutoMapper(typeof(MappingProfile).Assembly);
+        services.AddScoped<IDistribucionService, DistribucionService>();
+        services.AddScoped<IDetalleSalidaValidator, DetalleSalidaValidator>();
+        services.AddScoped<IRestriccionSalidaService, RestriccionSalidaService>();
+        services.AddScoped<IUsuarioService, UsuarioService>();
+        services.AddScoped<ISucursalService, SucursalService>();
+        services.AddScoped<IProfileFactory, ProfileFactory>();
+        services.AddScoped<IRoleTranslator, RoleTranslator>();
+
 
         return services;
     }

@@ -1,3 +1,5 @@
+using Modelo.Entidades;
+
 namespace Aplicacion.Tablas.Salidas.SalidasResponse;
 public class SalidaListaResponse{
     public int SalidaID { get; set; }
@@ -9,7 +11,13 @@ public class SalidaListaResponse{
     public decimal Total { get; set; }
 }
 
-public class LoteCantidadListado{
+public class LoteCantidadListado
+{
     public int LoteID { get; set; }
     public int Cantidad { get; set; }
-} 
+}
+public class DistribucionResultado
+{
+    public List<LoteCantidadListado> LotesValidos { get; set; } = [];
+    public List<Lote> LotesDetalle { get; set; } = [];
+}

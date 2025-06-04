@@ -1,11 +1,10 @@
 using System.Net;
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Modelo.Custom;
 using Modelo.Entidades;
-using Seguridad.Interfaces;
 
 namespace Aplicacion.Tablas.Accounts.GetCurrentUser;
 public class GetCurrentUserQuery
@@ -15,12 +14,12 @@ public class GetCurrentUserQuery
     internal class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQueryRequest, Result<Profile>>
     {
         private readonly UserManager<Usuario> _userManager;
-        private readonly ITokenService _tokenService;
+        private readonly IProfileFactory _profileFactory;
 
-        public GetCurrentUserQueryHandler(UserManager<Usuario> userManager,ITokenService tokenService)
+        public GetCurrentUserQueryHandler(UserManager<Usuario> userManager, IProfileFactory profileFactory)
         {
             _userManager = userManager;
-            _tokenService = tokenService;
+            _profileFactory = profileFactory;
         }
 
         public async Task<Result<Profile>> Handle(
@@ -36,34 +35,7 @@ public class GetCurrentUserQuery
             {
                 return Result<Profile>.Failure("No se encontro el usuario.", HttpStatusCode.NotFound);
             }
-            var tipo="";
-            /* var roleNames = await _userManager.GetRolesAsync(user);
-            if (roleNames.Contains(CustomRoles.ADMINBODEGA))
-            {
-                tipo="Administrador";
-            }
-            else if (roleNames.Contains(CustomRoles.CLIENT))
-            {
-                tipo="Operador";
-            }
-            else
-            {
-                tipo="Sin Asignacion de Rol.";
-            } */
-            tipo = user.Role?.Name switch
-            {
-                CustomRoles.ADMINBODEGA => "Administrador",
-                CustomRoles.CLIENT => "Operador",
-                _ => "Sin Asignacion de Rol."
-            };
-            var profile = new Profile
-            {
-                Email = user.Email,
-                NombreCompleto = user.NombreCompleto,
-                Token = await _tokenService.CreateToken(user),
-                Username = user.UserName,
-                Tipo=tipo
-            };
+            var profile = await _profileFactory.CrearAsync(user);
 
             return Result<Profile>.Success(profile);
         }
