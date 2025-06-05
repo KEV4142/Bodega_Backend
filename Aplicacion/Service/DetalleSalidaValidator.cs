@@ -10,9 +10,9 @@ public class DetalleSalidaValidator : IDetalleSalidaValidator
 {
     public Result<Lote> ValidarDetalle(SalidaDetRequest detalle, List<LoteCantidadListado> lotesValidos, List<Lote> lotesDetalle)
     {
-        var lote = lotesDetalle.FirstOrDefault(linea => linea.LoteID == detalle.LoteID);
+        var lote = lotesDetalle.FirstOrDefault(linea => linea.LoteID == detalle.LoteID && linea.Cantidad>0);
         if (lote is null)
-            {return Result<Lote>.Failure($"El Lote con ID {detalle.LoteID} no es válido.");}
+            {return Result<Lote>.Failure($"El Lote con ID {detalle.LoteID} no es válido. Favor revisar ID o Cantidad.");}
             
         if (!lotesValidos.Any(lv => lv.LoteID == detalle.LoteID))
             {return Result<Lote>.Failure($"El Lote con ID {detalle.LoteID} no es válido, se tiene que optar a uno que este con fecha de vencimiento mas proxima.");}

@@ -1,12 +1,12 @@
 using System.Net;
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Modelo.Entidades;
 using Persistencia;
-using Seguridad.Interfaces;
 
 namespace Aplicacion.Tablas.Salidas.SalidaUpdateEstado;
 public class SalidaUpdateEstadoCommand
@@ -17,30 +17,23 @@ public class SalidaUpdateEstadoCommand
     {
         private readonly BackendContext _backendContext;
         private readonly UserManager<Usuario> _userManager;
-        private readonly IUserAccessor _user;
+        private readonly IUsuarioService _usuarioService;
 
-        public SalidaUpdateEstadoCommandHandler(BackendContext context, UserManager<Usuario> userManager, IUserAccessor user)
+        public SalidaUpdateEstadoCommandHandler(BackendContext context, UserManager<Usuario> userManager, IUsuarioService usuarioService)
         {
             _backendContext = context;
             _userManager = userManager;
-            _user = user;
+            _usuarioService = usuarioService;
         }
         public async Task<Result<int>> Handle(
             SalidaUpdateEstadoCommandRequest request,
             CancellationToken cancellationToken
         )
         {
-            var usuarioID = _user.GetUserId();
-            if (string.IsNullOrEmpty(usuarioID))
-            {
-                return Result<int>.Failure("No se encontró el UsuarioID en la Autorizacion.", HttpStatusCode.Unauthorized);
-            }
-
-            var appUsuario = await _userManager.Users!.FirstOrDefaultAsync(x => x.Id == usuarioID);
-            if (appUsuario is null)
-            {
-                return Result<int>.Failure("No se encontro el Usuario.", HttpStatusCode.NotFound);
-            }
+            var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync();
+            if (!usuarioResult.IsSuccess)
+                {return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode);}
+            var usuario = usuarioResult.Value!;
 
             var salidaID = request.SalidaID;
             var salida = await _backendContext.SalidaEncs!.FirstOrDefaultAsync(x => x.SalidaID == salidaID);
@@ -55,7 +48,7 @@ public class SalidaUpdateEstadoCommand
             }
             salida.Estado = request.salidaUpdateEstadoRequest.Estado!.ToUpper();
             salida.FechaRecibido = DateTime.Now;
-            salida.UsuarioRecibe = usuarioID;
+            salida.UsuarioRecibe = usuario.Id;
             
             try
             {

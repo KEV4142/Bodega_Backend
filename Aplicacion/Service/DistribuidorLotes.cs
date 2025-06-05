@@ -1,8 +1,10 @@
-namespace Aplicacion.Core;
+using Aplicacion.Interface;
 
-public static class DistribucionLotes
+namespace Aplicacion.Service;
+
+public class DistribuidorLotes : IDistribuidorLotes
 {
-    public static List<T> Distribuir<T>(List<T> lotesOrdenados, int cantidadSolicitada, Func<T, int> getCantidad, Action<T, int> setCantidad)
+    public List<T> Distribuir<T>(List<T> lotesOrdenados, int cantidadSolicitada, Func<T, int> getCantidad, Action<T, int> setCantidad)
     {
         var resultado = new List<T>();
         int pedido = cantidadSolicitada;

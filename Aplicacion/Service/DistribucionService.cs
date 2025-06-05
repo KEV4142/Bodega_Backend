@@ -13,11 +13,13 @@ public class DistribucionService : IDistribucionService
 {
     private readonly BackendContext _backendContext;
     private readonly IMapper _mapper;
+    private readonly IDistribuidorLotes _distribuidorLotes;
 
-    public DistribucionService(BackendContext context, IMapper mapper)
+    public DistribucionService(BackendContext context, IMapper mapper, IDistribuidorLotes distribuidorLotes)
     {
         _backendContext = context;
         _mapper = mapper;
+        _distribuidorLotes = distribuidorLotes;
     }
 
     public async Task<DistribucionResultado> ObtenerDistribucionAsync(List<SalidaDetRequest> detalles, CancellationToken cancellationToken)
@@ -44,7 +46,7 @@ public class DistribucionService : IDistribucionService
                 .ProjectTo<LoteCantidadListado>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
-            var seleccionados = DistribucionLotes.Distribuir(
+            var seleccionados = _distribuidorLotes.Distribuir(
                 productosListado,
                 linea.TotalCantidad,
                 l => l.Cantidad,

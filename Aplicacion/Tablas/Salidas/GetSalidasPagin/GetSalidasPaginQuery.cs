@@ -61,10 +61,7 @@ public class GetSalidasPaginQuery
                                 "FECHARECIBIDO" => salida => salida.FechaRecibido!,
                                     _ => salida => salida.SalidaID!
                                 };
-                // bool orderBy = request.SalidasPaginRequest.OrderAsc ?? true;
-                bool orderBy = request.SalidasPaginRequest.OrderAsc.HasValue
-                            ? request.SalidasPaginRequest.OrderAsc.Value
-                            : true;
+                bool orderBy = request.SalidasPaginRequest.OrderAsc ?? true;
 
                 salidasQuery = orderBy
                             ? salidasQuery.OrderBy(orderBySelector)

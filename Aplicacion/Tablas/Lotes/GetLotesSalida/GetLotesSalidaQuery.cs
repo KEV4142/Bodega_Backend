@@ -1,5 +1,6 @@
 using System.Net;
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using Aplicacion.Tablas.Lotes.DTOLotes;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -18,11 +19,13 @@ public class GetLotesSalidaQuery
     {
         private readonly BackendContext _context;
         private readonly IMapper _mapper;
+        private readonly IDistribuidorLotes _distribuidorLotes;
 
-        public GetLotesSalidaQueryHandler(BackendContext context, IMapper mapper)
+        public GetLotesSalidaQueryHandler(BackendContext context, IMapper mapper, IDistribuidorLotes distribuidorLotes)
         {
             _context = context;
             _mapper = mapper;
+            _distribuidorLotes = distribuidorLotes;
         }
 
         public async Task<Result<List<LoteCompletoResponse>>> Handle(
@@ -55,7 +58,7 @@ public class GetLotesSalidaQuery
 
             var productosSalida = new List<LoteCompletoResponse>();
 
-            productosSalida = DistribucionLotes.Distribuir(
+            productosSalida = _distribuidorLotes.Distribuir(
                                 productosListado,
                                 request.getLotesSalidaRequest.Cantidad,
                                 l => l.Cantidad,
