@@ -11,6 +11,7 @@ public partial class Lote
     public decimal Costo { get; set; }
 
     public int Cantidad { get; set; }
+    public byte[] CampoConcurrencia { get; set; } = null!;
 
     public virtual Producto Producto { get; set; } = null!;
 

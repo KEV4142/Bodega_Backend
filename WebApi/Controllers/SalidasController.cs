@@ -23,7 +23,7 @@ public class SalidasController : ControllerBase
     {
         _sender = sender;
     }
-    
+
     /// <summary>
     /// Registro de Salidas de Inventario.
     /// </summary>
@@ -35,6 +35,7 @@ public class SalidasController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.Conflict)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
     public async Task<ActionResult<int>> Salida(
         [FromBody] SalidaEncCreateRequest request,

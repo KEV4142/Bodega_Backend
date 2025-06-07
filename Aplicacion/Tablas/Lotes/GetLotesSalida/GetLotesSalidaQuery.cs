@@ -2,12 +2,9 @@ using System.Net;
 using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Lotes.DTOLotes;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
+
 
 namespace Aplicacion.Tablas.Lotes.GetLotesSalida;
 public class GetLotesSalidaQuery
@@ -17,15 +14,15 @@ public class GetLotesSalidaQuery
     internal class GetLotesSalidaQueryHandler
         : IRequestHandler<GetLotesSalidaQueryRequest, Result<List<LoteCompletoResponse>>>
     {
-        private readonly BackendContext _context;
-        private readonly IMapper _mapper;
         private readonly IDistribuidorLotes _distribuidorLotes;
+        private readonly IProductoService _productoService;
+        private readonly ILoteService _loteService;
 
-        public GetLotesSalidaQueryHandler(BackendContext context, IMapper mapper, IDistribuidorLotes distribuidorLotes)
+        public GetLotesSalidaQueryHandler(IDistribuidorLotes distribuidorLotes, IProductoService productoService, ILoteService loteService)
         {
-            _context = context;
-            _mapper = mapper;
             _distribuidorLotes = distribuidorLotes;
+            _productoService = productoService;
+            _loteService = loteService;
         }
 
         public async Task<Result<List<LoteCompletoResponse>>> Handle(
@@ -33,28 +30,18 @@ public class GetLotesSalidaQuery
             CancellationToken cancellationToken
         )
         {
-            var producto = await _context.Productos!.Where(x => x.ProductoID == request.getLotesSalidaRequest.ProductoID)
-            .FirstOrDefaultAsync();
+            var productoResultado = await _productoService.ObtenerProductoPorIDAsync(request.getLotesSalidaRequest.ProductoID);
+            if (!productoResultado.IsSuccess)
+                {return Result<List<LoteCompletoResponse>>.Failure(productoResultado.Error!, productoResultado.StatusCode);}
 
-            if (producto is null)
-            {
-                return Result<List<LoteCompletoResponse>>.Failure("No se encontro el Producto.", HttpStatusCode.NotFound);
-            }
-
-            var productoDisponible = await _context.Lotes!
-                .Where(l => l.ProductoID == request.getLotesSalidaRequest.ProductoID)
-                .SumAsync(l => (int?)l.Cantidad) ?? 0;
+            var productoDisponible = await _productoService.TieneInventarioDisponible(request.getLotesSalidaRequest.ProductoID,request.getLotesSalidaRequest.Cantidad);
 
             if (productoDisponible < request.getLotesSalidaRequest.Cantidad)
             {
-                return Result<List<LoteCompletoResponse>>.Failure("No se tiene suficiente Inventario para la Salida.", HttpStatusCode.BadRequest);
+                return Result<List<LoteCompletoResponse>>.Failure($"No se tiene suficiente Inventario para la Salida({productoDisponible}).", HttpStatusCode.BadRequest);
             }
 
-            var productosListado = await _context.Lotes!
-                .Where(l => l.ProductoID == request.getLotesSalidaRequest.ProductoID && l.Cantidad > 0)
-                .OrderBy(l => l.FechaVencimiento)
-                .ProjectTo<LoteCompletoResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+            var productosListado = await _loteService.ObtenerLotesDisponiblesOrdenados(request.getLotesSalidaRequest.ProductoID);
 
             var productosSalida = new List<LoteCompletoResponse>();
 

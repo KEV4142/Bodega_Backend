@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Modelo.Entidades;
@@ -11,12 +10,10 @@ namespace Seguridad.Security;
 public class TokenService : ITokenService
 {
     private readonly IConfiguration _configuration;
-    private readonly UserManager<Usuario> _userManager;
 
-    public TokenService(IConfiguration configuration, UserManager<Usuario> userManager)
+    public TokenService(IConfiguration configuration)
     {
         _configuration = configuration;
-        _userManager = userManager;
     }
 
     public Task<string> CreateToken(Usuario usuario)

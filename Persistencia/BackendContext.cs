@@ -39,6 +39,10 @@ public partial class BackendContext : IdentityDbContext<Usuario>
             entity.Property(e => e.Costo)
                 .HasColumnType("decimal(5, 2)");
 
+            entity.Property(e => e.CampoConcurrencia)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
             entity.HasOne(d => d.Producto).WithMany(p => p.Lotes)
                 .HasForeignKey(d => d.ProductoID)
                 .OnDelete(DeleteBehavior.Restrict)
