@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Modelo.Interfaces;
+using Persistencia.Repositorios;
 
 namespace Persistencia;
 public static class DependencyInjection
@@ -14,6 +16,9 @@ public static class DependencyInjection
         {
             opt.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
         });
+        services.AddScoped<ISucursalRepository, SucursalRepository>();
+        services.AddScoped<IProductoRepository, ProductoRepository>();
+        services.AddScoped<ILoteRepository, LoteRepository>();
         return services;
     }
 }

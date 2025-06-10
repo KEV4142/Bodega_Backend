@@ -1,11 +1,9 @@
-using System.Net;
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using Aplicacion.Tablas.Productos.DTOProductos;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
+
 
 
 
@@ -18,12 +16,12 @@ public class GetProductoQuery
     }
     internal class GetProductoQueryHandler : IRequestHandler<GetProductoQueryRequest, Result<ProductoResponse>>
     {
-        private readonly BackendContext _context;
+        private readonly IProductoService _productoService;
         private readonly IMapper _mapper;
 
-        public GetProductoQueryHandler(BackendContext context, IMapper mapper)
+        public GetProductoQueryHandler(IProductoService productoService, IMapper mapper)
         {
-            _context = context;
+            _productoService = productoService;
             _mapper = mapper;
         }
 
@@ -32,16 +30,15 @@ public class GetProductoQuery
             CancellationToken cancellationToken
         )
         {
-            var producto = await _context.Productos!.Where(x => x.ProductoID == request.ProductoID)
-            .ProjectTo<ProductoResponse>(_mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync();
+            var producto = await _productoService.ObtenerProductoPorID(request.ProductoID);
 
-            if (producto is null)
+            if (!producto.IsSuccess)
             {
-                return Result<ProductoResponse>.Failure("No se encontro el Producto.", HttpStatusCode.NotFound);
+                return Result<ProductoResponse>.Failure(producto.Error!, producto.StatusCode);
             }
+            var productoDTO = _mapper.Map<ProductoResponse>(producto.Value);
 
-            return Result<ProductoResponse>.Success(producto!);
+            return Result<ProductoResponse>.Success(productoDTO);
         }
 
 

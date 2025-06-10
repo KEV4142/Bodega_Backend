@@ -48,7 +48,7 @@ public class SalidaEncCreateCommand
                 SucursalID = request.salidaEncCreateRequest.SucursalID,
                 UsuarioID = usuario.Id
             };
-            var sucursalResultado = await _sucursalService.ObtenerSucursalPorIDAsync(request.salidaEncCreateRequest.SucursalID);
+            var sucursalResultado = await _sucursalService.ObtenerSucursalPorID(request.salidaEncCreateRequest.SucursalID);
             if (!sucursalResultado.IsSuccess)
                 {return Result<int>.Failure(sucursalResultado.Error!, HttpStatusCode.NotFound);}
 

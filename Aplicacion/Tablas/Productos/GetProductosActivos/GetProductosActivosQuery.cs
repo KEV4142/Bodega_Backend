@@ -1,4 +1,5 @@
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using Aplicacion.Tablas.Productos.DTOProductos;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -15,12 +16,12 @@ public class GetProductosActivos
     internal class GetProductosActivasQueryHandler
         : IRequestHandler<GetProductosActivasQueryRequest, Result<List<ProductoResponse>>>
     {
-        private readonly BackendContext _context;
+        private readonly IProductoService _productoService;
         private readonly IMapper _mapper;
 
-        public GetProductosActivasQueryHandler(BackendContext context, IMapper mapper)
+        public GetProductosActivasQueryHandler(IProductoService productoService, IMapper mapper)
         {
-            _context = context;
+            _productoService = productoService;
             _mapper = mapper;
         }
 
@@ -29,13 +30,10 @@ public class GetProductosActivos
             CancellationToken cancellationToken
         )
         {
-            var productoListado = await _context.Productos!
-                .Where(s => s.Estado!=null && s.Estado.ToUpper().Equals("A"))
-                .OrderBy(c => c.ProductoID)
-                .ProjectTo<ProductoResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+            var productoListado = await _productoService.ObtenerProductosActivos(cancellationToken);
+            var response = _mapper.Map<List<ProductoResponse>>(productoListado);
 
-            return Result<List<ProductoResponse>>.Success(productoListado);
+            return Result<List<ProductoResponse>>.Success(response);
         }
     }
 }

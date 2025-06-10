@@ -5,5 +5,5 @@ namespace Aplicacion.Interface;
 
 public interface ISucursalService
 {
-    Task<Result<Sucursal>> ObtenerSucursalPorIDAsync(int sucursalID);
+    Task<Result<Sucursal>> ObtenerSucursalPorID(int sucursalID);
 }

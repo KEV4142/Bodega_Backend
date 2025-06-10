@@ -30,7 +30,7 @@ public class GetLotesSalidaQuery
             CancellationToken cancellationToken
         )
         {
-            var productoResultado = await _productoService.ObtenerProductoPorIDAsync(request.getLotesSalidaRequest.ProductoID);
+            var productoResultado = await _productoService.ObtenerProductoPorID(request.getLotesSalidaRequest.ProductoID);
             if (!productoResultado.IsSuccess)
                 {return Result<List<LoteCompletoResponse>>.Failure(productoResultado.Error!, productoResultado.StatusCode);}
 

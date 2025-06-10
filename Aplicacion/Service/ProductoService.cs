@@ -1,22 +1,21 @@
 using System.Net;
 using Aplicacion.Core;
 using Aplicacion.Interface;
-using Microsoft.EntityFrameworkCore;
 using Modelo.Entidades;
-using Persistencia;
+using Modelo.Interfaces;
 
 namespace Aplicacion.Service;
 
 public class ProductoService : IProductoService
 {
-    private readonly BackendContext _backendContext;
-    public ProductoService(BackendContext context)
+    private readonly IProductoRepository _productoRepository;
+    public ProductoService(IProductoRepository productoRepository)
     {
-        _backendContext = context;
+        _productoRepository = productoRepository;
     }
-    public async Task<Result<Producto>> ObtenerProductoPorIDAsync(int productoID)
+    public async Task<Result<Producto>> ObtenerProductoPorID(int productoID)
     {
-        var producto = await _backendContext.Productos!.FirstOrDefaultAsync(p => p.ProductoID == productoID);
+        var producto = await _productoRepository.ObtenerPorIDAsync(productoID);
         if (producto is null)
             return Result<Producto>.Failure("No se encontró el Producto.", HttpStatusCode.NotFound);
 
@@ -24,10 +23,13 @@ public class ProductoService : IProductoService
     }
     public async Task<int> TieneInventarioDisponible(int productoID, int cantidad)
     {
-        var disponible = await _backendContext.Lotes!
-            .Where(l => l.ProductoID == productoID)
-            .SumAsync(l => (int?)l.Cantidad) ?? 0;
+        var disponible = await _productoRepository.ObtenerInventarioDisponibleAsync(productoID);
 
         return disponible;
     }
+    public async Task<List<Producto>> ObtenerProductosActivos(CancellationToken cancellationToken)
+    {
+        return await _productoRepository.ObtenerProductosActivosAsync(cancellationToken);
+    }
+
 }

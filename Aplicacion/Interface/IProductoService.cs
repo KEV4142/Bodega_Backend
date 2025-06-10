@@ -5,6 +5,8 @@ namespace Aplicacion.Interface;
 
 public interface IProductoService
 {
-    Task<Result<Producto>> ObtenerProductoPorIDAsync(int productoID);
+    Task<Result<Producto>> ObtenerProductoPorID(int productoID);
     Task<int> TieneInventarioDisponible(int productoID, int cantidad);
+    Task<List<Producto>> ObtenerProductosActivos(CancellationToken cancellationToken);
+
 }

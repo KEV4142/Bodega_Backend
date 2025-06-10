@@ -1,22 +1,21 @@
 using Aplicacion.Core;
 using Aplicacion.Interface;
-using Microsoft.EntityFrameworkCore;
 using Modelo.Entidades;
-using Persistencia;
+using Modelo.Interfaces;
 
 namespace Aplicacion.Service;
 
 public class SucursalService : ISucursalService
 {
-    private readonly BackendContext _backendContext;
+    private readonly ISucursalRepository _sucursalRepository;
 
-    public SucursalService(BackendContext context)
+    public SucursalService(ISucursalRepository sucursalRepository)
     {
-        _backendContext = context;
+        _sucursalRepository = sucursalRepository;
     }
-    public async Task<Result<Sucursal>> ObtenerSucursalPorIDAsync(int sucursalID)
+    public async Task<Result<Sucursal>> ObtenerSucursalPorID(int sucursalID)
     {
-        var sucursal = await _backendContext.Sucursales!.FirstOrDefaultAsync(s => s.SucursalID == sucursalID);
+        var sucursal = await _sucursalRepository.ObtenerPorIDAsync(sucursalID);
         if (sucursal is null)
             return Result<Sucursal>.Failure("No se encontró la sucursal.");
 

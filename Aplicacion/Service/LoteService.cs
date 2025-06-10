@@ -1,28 +1,24 @@
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Lotes.DTOLotes;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
+using Modelo.Interfaces;
+
 
 namespace Aplicacion.Service;
 
 public class LoteService : ILoteService
 {
-    private readonly BackendContext _backendContext;
+    private readonly ILoteRepository _loteRepository;
     private readonly IMapper _mapper;
 
-    public LoteService(BackendContext context, IMapper mapper)
+    public LoteService(ILoteRepository loteRepository, IMapper mapper)
     {
-        _backendContext = context;
+        _loteRepository = loteRepository;
         _mapper = mapper;
     }
     public async Task<List<LoteCompletoResponse>> ObtenerLotesDisponiblesOrdenados(int productoID)
     {
-        return await _backendContext.Lotes!
-            .Where(lote => lote.ProductoID == productoID && lote.Cantidad > 0)
-            .OrderBy(l => l.FechaVencimiento)
-            .ProjectTo<LoteCompletoResponse>(_mapper.ConfigurationProvider)
-            .ToListAsync();
+        var lotes = await _loteRepository.ObtenerLotesDisponiblesOrdenadosAsync(productoID);
+        return _mapper.Map<List<LoteCompletoResponse>>(lotes);
     }
 }
