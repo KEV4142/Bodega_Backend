@@ -1,28 +1,22 @@
-using System.Net;
 using Aplicacion.Core;
 using Aplicacion.Interface;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Modelo.Entidades;
-using Persistencia;
 
 namespace Aplicacion.Tablas.Salidas.SalidaUpdateEstado;
+
 public class SalidaUpdateEstadoCommand
 {
     public record SalidaUpdateEstadoCommandRequest(SalidaUpdateEstadoRequest salidaUpdateEstadoRequest, int SalidaID) : IRequest<Result<int>>;
 
     internal class SalidaUpdateEstadoCommandHandler : IRequestHandler<SalidaUpdateEstadoCommandRequest, Result<int>>
     {
-        private readonly BackendContext _backendContext;
-        private readonly UserManager<Usuario> _userManager;
+        private readonly ISalidaService _salidaService;
         private readonly IUsuarioService _usuarioService;
 
-        public SalidaUpdateEstadoCommandHandler(BackendContext context, UserManager<Usuario> userManager, IUsuarioService usuarioService)
+        public SalidaUpdateEstadoCommandHandler(ISalidaService salidaService, IUsuarioService usuarioService)
         {
-            _backendContext = context;
-            _userManager = userManager;
+            _salidaService = salidaService;
             _usuarioService = usuarioService;
         }
         public async Task<Result<int>> Handle(
@@ -32,37 +26,25 @@ public class SalidaUpdateEstadoCommand
         {
             var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync();
             if (!usuarioResult.IsSuccess)
-                {return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode);}
+            { return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode); }
             var usuario = usuarioResult.Value!;
 
             var salidaID = request.SalidaID;
-            var salida = await _backendContext.SalidaEncs!.FirstOrDefaultAsync(x => x.SalidaID == salidaID);
 
-            if (salida is null)
-            {
-                return Result<int>.Failure("La Orden de Salida no existe.", HttpStatusCode.NotFound);
-            }
-            if (salida.Estado.Equals("R", StringComparison.OrdinalIgnoreCase))
-            {
-                return Result<int>.Failure("La Orden de Salida ya ha sido recibida.", HttpStatusCode.BadRequest);
-            }
-            salida.Estado = request.salidaUpdateEstadoRequest.Estado!.ToUpper();
-            salida.FechaRecibido = DateTime.Now;
-            salida.UsuarioRecibe = usuario.Id;
-            
-            try
-            {
-                using var transaction = await _backendContext.Database.BeginTransactionAsync(cancellationToken);
+            var salida = await _salidaService.ObtenerSalidaPorID(salidaID, cancellationToken);
+            if (!salida.IsSuccess)
+                return Result<int>.Failure(salida.Error!, salida.StatusCode);
 
-                await _backendContext.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return Result<int>.Failure("Errores en la actualizacion del estado de la Orden Salida.", HttpStatusCode.BadRequest);
-            }
-            return Result<int>.Success(salida.SalidaID);
+            var actualizarResultado = await _salidaService.CambiarEstadoSalida(
+                                        salida.Value!,
+                                        request.salidaUpdateEstadoRequest.Estado!.ToUpper(),
+                                        usuario.Id,
+                                        cancellationToken
+                                    );
+            if (!actualizarResultado.IsSuccess)
+                return Result<int>.Failure(actualizarResultado.Error!, actualizarResultado.StatusCode);
+
+            return actualizarResultado;
         }
     }
 
@@ -73,5 +55,5 @@ public class SalidaUpdateEstadoCommand
             RuleFor(x => x.salidaUpdateEstadoRequest).SetValidator(new SalidaUpdateEstadoValidator());
             RuleFor(x => x.SalidaID).NotNull();
         }
-    } 
+    }
 }

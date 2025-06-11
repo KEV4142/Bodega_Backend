@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using Aplicacion.Tablas.Salidas.SalidasResponse;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using MediatR;
 using Modelo.Entidades;
-using Persistencia;
 
 namespace Aplicacion.Tablas.Salidas.GetSalidasPagin;
 
@@ -19,12 +19,12 @@ public class GetSalidasPaginQuery
     internal class GetSalidasPaginQueryHandler
     : IRequestHandler<GetSalidasPaginQueryRequest, Result<PagedList<SalidaListaResponse>>>
     {
-        private readonly BackendContext _context;
+        private readonly ISalidaService _salidaService;
         private readonly IMapper _mapper;
 
-        public GetSalidasPaginQueryHandler(BackendContext context, IMapper mapper)
+        public GetSalidasPaginQueryHandler(ISalidaService salidaService, IMapper mapper)
         {
-            _context = context;
+            _salidaService = salidaService;
             _mapper = mapper;
         }
 
@@ -33,7 +33,7 @@ public class GetSalidasPaginQuery
             CancellationToken cancellationToken
         )
         {
-            IQueryable<SalidaEnc> queryable = _context.SalidaEncs!;
+            IQueryable<SalidaEnc> queryable = _salidaService.GetQueryable();
             var predicate = ExpressionBuilder.New<SalidaEnc>();
 
             if (!string.IsNullOrEmpty(request.SalidasPaginRequest!.SucursalID.ToString()) && request.SalidasPaginRequest.SucursalID != 0)

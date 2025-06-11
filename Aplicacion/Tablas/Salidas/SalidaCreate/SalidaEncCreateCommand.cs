@@ -3,10 +3,7 @@ using Aplicacion.Core;
 using Aplicacion.Interface;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Modelo.Entidades;
-using Persistencia;
 
 namespace Aplicacion.Tablas.Salidas.SalidaCreate;
 
@@ -16,30 +13,28 @@ public class SalidaEncCreateCommand
 
     internal class SalidaEncCreateCommandHandler : IRequestHandler<SalidaEncCreateCommandRequest, Result<int>>
     {
-        private readonly BackendContext _backendContext;
+        private readonly ISalidaService _salidaService;
         private readonly IDistribucionService _distribucionService;
         private readonly IDetalleSalidaValidator _detalleSalidaValidator;
         private readonly IRestriccionSalidaService _restriccionSalidaService;
         private readonly IUsuarioService _usuarioService;
         private readonly ISucursalService _sucursalService;
-        private readonly ILogger<SalidaEncCreateCommandHandler> _logger;
 
-        public SalidaEncCreateCommandHandler(BackendContext backendContext, IDistribucionService distribucionService, IDetalleSalidaValidator detalleSalidaValidator, IRestriccionSalidaService restriccionSalidaService, IUsuarioService usuarioService, ISucursalService sucursalService,ILogger<SalidaEncCreateCommandHandler> logger)
+        public SalidaEncCreateCommandHandler(ISalidaService salidaService, IDistribucionService distribucionService, IDetalleSalidaValidator detalleSalidaValidator, IRestriccionSalidaService restriccionSalidaService, IUsuarioService usuarioService, ISucursalService sucursalService)
         {
-            _backendContext = backendContext;
+            _salidaService = salidaService;
             _distribucionService = distribucionService;
             _detalleSalidaValidator = detalleSalidaValidator;
             _restriccionSalidaService = restriccionSalidaService;
             _usuarioService = usuarioService;
             _sucursalService = sucursalService;
-            _logger = logger;
         }
 
         public async Task<Result<int>> Handle(SalidaEncCreateCommandRequest request, CancellationToken cancellationToken)
         {
             var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync();
             if (!usuarioResult.IsSuccess)
-                {return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode);}
+            { return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode); }
             var usuario = usuarioResult.Value!;
 
             var salidaEnc = new SalidaEnc
@@ -50,7 +45,7 @@ public class SalidaEncCreateCommand
             };
             var sucursalResultado = await _sucursalService.ObtenerSucursalPorID(request.salidaEncCreateRequest.SucursalID);
             if (!sucursalResultado.IsSuccess)
-                {return Result<int>.Failure(sucursalResultado.Error!, HttpStatusCode.NotFound);}
+            { return Result<int>.Failure(sucursalResultado.Error!, HttpStatusCode.NotFound); }
 
             salidaEnc.Sucursales = sucursalResultado.Value!;
 
@@ -65,7 +60,7 @@ public class SalidaEncCreateCommand
             {
                 var resultadoValidacion = _detalleSalidaValidator.ValidarDetalle(detalle, lotesValidos, lotesDetalle);
                 if (!resultadoValidacion.IsSuccess)
-                    {return Result<int>.Failure(resultadoValidacion.Error!, resultadoValidacion.StatusCode);}
+                { return Result<int>.Failure(resultadoValidacion.Error!, resultadoValidacion.StatusCode); }
 
                 var lote = resultadoValidacion.Value!;
                 sumaDetalle += lote.Costo * detalle.Cantidad;
@@ -88,47 +83,12 @@ public class SalidaEncCreateCommand
             {
                 return Result<int>.Failure(restriccionResult.Error!, HttpStatusCode.BadRequest);
             }
-            _backendContext.Add(salidaEnc);
 
-            try
-            {
-                using var transaction = await _backendContext.Database.BeginTransactionAsync(cancellationToken);
+            var insertarResultado = await _salidaService.RegistrarSalida(salidaEnc, cancellationToken);
+            if (!insertarResultado.IsSuccess)
+                return insertarResultado;
 
-                await _backendContext.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                var conflictoLotes = ex.Entries
-                    .Where(e => e.Entity is Lote)
-                    .Select(e => (Lote)e.Entity)
-                    .ToList();
-
-                var loteIDS = string.Join(",", conflictoLotes.Select(l => l.LoteID));
-                var productoIDS = string.Join(",", salidaEnc.SalidaDets.Select(d => d.Lote.ProductoID));
-                var cantidades = string.Join(",", salidaEnc.SalidaDets.Select(d => d.Cantidad));
-
-                _logger.LogError(ex, "Conflicto de concurrencia al guardar la salida (SucursalID: {SucursalID}, UsuarioID: {UsuarioID}, LoteIDs: {LoteIDS}, ProductoIDs: {ProductoIDS}, Cantidades: {Cantidades})",
-                    salidaEnc.SucursalID, salidaEnc.UsuarioID, loteIDS, productoIDS, cantidades);
-
-                return Result<int>.Failure("Conflicto de concurrencia en lote(s): {loteIds}. Intenta nuevamente rectificando el lote.", HttpStatusCode.Conflict);
-            }
-            catch (Exception ex)
-            {
-                var loteIDS = string.Join(",", salidaEnc.SalidaDets.Select(detalle => detalle.LoteID));
-                var productoIDS = string.Join(",", salidaEnc.SalidaDets.Select(detalle => detalle.Lote.ProductoID));
-                var cantidades = string.Join(",", salidaEnc.SalidaDets.Select(detalle => detalle.Cantidad));
-
-                _logger.LogError(ex, "Error al guardar la salida (SucursalID: {SucursalID}, UsuarioID: {UsuarioID}, LoteID's: {LoteIDS}, ProductoID's: {productoIDS}, Cantidad: {cantidades}) en SalidaEncCreateCommand",
-                    salidaEnc.SucursalID,
-                    salidaEnc.UsuarioID,
-                    loteIDS,
-                    productoIDS,
-                    cantidades);
-                return Result<int>.Failure("No se pudo insertar el registro de la Orden ni su Detalle.", HttpStatusCode.BadRequest);
-            }
-            
-            return Result<int>.Success(salidaEnc.SalidaID);
+            return insertarResultado;
         }
     }
 

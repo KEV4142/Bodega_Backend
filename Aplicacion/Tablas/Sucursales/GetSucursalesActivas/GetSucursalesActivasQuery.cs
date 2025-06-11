@@ -1,12 +1,11 @@
 using Aplicacion.Core;
+using Aplicacion.Interface;
 using Aplicacion.Tablas.Sucursales.DTOSucursales;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
 
 namespace Aplicacion.Tablas.Sucursales.GetSucursalesActivas;
+
 public class GetSucursalesActivas
 {
     public record GetSucursalesActivasQueryRequest : IRequest<Result<List<SucursalResponse>>>
@@ -15,24 +14,22 @@ public class GetSucursalesActivas
     internal class GetSucursalesActivasQueryHandler
         : IRequestHandler<GetSucursalesActivasQueryRequest, Result<List<SucursalResponse>>>
     {
-        private readonly BackendContext _context;
+        private readonly ISucursalService _sucursalService;
         private readonly IMapper _mapper;
 
-        public GetSucursalesActivasQueryHandler(BackendContext context, IMapper mapper)
+        public GetSucursalesActivasQueryHandler(ISucursalService sucursalService, IMapper mapper)
         {
-            _context = context;
+            _sucursalService = sucursalService;
             _mapper = mapper;
         }
 
         public async Task<Result<List<SucursalResponse>>> Handle(
-            GetSucursalesActivasQueryRequest request, 
+            GetSucursalesActivasQueryRequest request,
             CancellationToken cancellationToken
         )
         {
-            var sucursales = await _context.Sucursales!
-                .Where(s => s.Estado!=null && s.Estado.ToUpper() =="A")
-                .ProjectTo<SucursalResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+            var listaSucursales = await _sucursalService.ObtenerSucursalesActivas(cancellationToken);
+            var sucursales = _mapper.Map<List<SucursalResponse>>(listaSucursales);
 
             return Result<List<SucursalResponse>>.Success(sucursales);
         }

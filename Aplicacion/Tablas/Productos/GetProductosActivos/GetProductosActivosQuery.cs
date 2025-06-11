@@ -2,10 +2,8 @@ using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Productos.DTOProductos;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
+
 
 namespace Aplicacion.Tablas.Productos.GetProductosActivos;
 public class GetProductosActivos

@@ -6,4 +6,6 @@ namespace Aplicacion.Interface;
 public interface ISucursalService
 {
     Task<Result<Sucursal>> ObtenerSucursalPorID(int sucursalID);
+    Task<List<Sucursal>> ObtenerSucursalesActivas(CancellationToken cancellationToken);
+
 }

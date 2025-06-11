@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<ISucursalService, SucursalService>();
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<ILoteService, LoteService>();
+        services.AddScoped<ISalidaService, SalidaService>();
         services.AddScoped<IProfileFactory, ProfileFactory>();
         services.AddScoped<IRoleTranslator, RoleTranslator>();
         services.AddScoped<IDistribuidorLotes, DistribuidorLotes>();

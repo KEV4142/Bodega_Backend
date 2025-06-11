@@ -21,4 +21,9 @@ public class SucursalService : ISucursalService
 
         return Result<Sucursal>.Success(sucursal);
     }
+    public async Task<List<Sucursal>> ObtenerSucursalesActivas(CancellationToken cancellationToken)
+    {
+        return await _sucursalRepository.ObtenerSucursalesActivasAsync(cancellationToken);
+    }
+
 }
