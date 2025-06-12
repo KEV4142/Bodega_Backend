@@ -15,19 +15,19 @@ public class SalidaEncCreateCommand
     {
         private readonly ISalidaService _salidaService;
         private readonly IDistribucionService _distribucionService;
-        private readonly IDetalleSalidaValidator _detalleSalidaValidator;
         private readonly IRestriccionSalidaService _restriccionSalidaService;
         private readonly IUsuarioService _usuarioService;
         private readonly ISucursalService _sucursalService;
+        private readonly ISalidaDetListBuilder _salidaDetListBuilder;
 
-        public SalidaEncCreateCommandHandler(ISalidaService salidaService, IDistribucionService distribucionService, IDetalleSalidaValidator detalleSalidaValidator, IRestriccionSalidaService restriccionSalidaService, IUsuarioService usuarioService, ISucursalService sucursalService)
+        public SalidaEncCreateCommandHandler(ISalidaService salidaService, IDistribucionService distribucionService, IRestriccionSalidaService restriccionSalidaService, IUsuarioService usuarioService, ISucursalService sucursalService, ISalidaDetListBuilder salidaDetListBuilder)
         {
             _salidaService = salidaService;
             _distribucionService = distribucionService;
-            _detalleSalidaValidator = detalleSalidaValidator;
             _restriccionSalidaService = restriccionSalidaService;
             _usuarioService = usuarioService;
             _sucursalService = sucursalService;
+            _salidaDetListBuilder = salidaDetListBuilder;
         }
 
         public async Task<Result<int>> Handle(SalidaEncCreateCommandRequest request, CancellationToken cancellationToken)
@@ -53,30 +53,21 @@ public class SalidaEncCreateCommand
             var lotesDetalle = distribucion.LotesDetalle;
             var lotesValidos = distribucion.LotesValidos;
 
-            var salidasDetalles = new List<SalidaDet>();
             decimal sumaDetalle = 0;
 
-            foreach (var detalle in request.salidaEncCreateRequest.SalidasDetalle)
-            {
-                var resultadoValidacion = _detalleSalidaValidator.ValidarDetalle(detalle, lotesValidos, lotesDetalle);
-                if (!resultadoValidacion.IsSuccess)
-                { return Result<int>.Failure(resultadoValidacion.Error!, resultadoValidacion.StatusCode); }
+            var resultadoDetalle = _salidaDetListBuilder.Construir(
+                                        request.salidaEncCreateRequest.SalidasDetalle,
+                                        lotesDetalle,
+                                        lotesValidos,
+                                        salidaEnc
+                                    );
 
-                var lote = resultadoValidacion.Value!;
-                sumaDetalle += lote.Costo * detalle.Cantidad;
-                lote.Cantidad -= detalle.Cantidad;
+            if (!resultadoDetalle.IsSuccess)
+                return Result<int>.Failure(resultadoDetalle.Error!, resultadoDetalle.StatusCode);
 
-                salidasDetalles.Add(new SalidaDet
-                {
-                    LoteID = detalle.LoteID,
-                    Cantidad = detalle.Cantidad,
-                    Lote = lote,
-                    Costo = lote.Costo,
-                    Salida = salidaEnc
-                });
-            }
+            salidaEnc.SalidaDets = resultadoDetalle.Value!.SalidasDetalles;
+            sumaDetalle = resultadoDetalle.Value.Total;
 
-            salidaEnc.SalidaDets = salidasDetalles;
 
             var restriccionResult = await _restriccionSalidaService.ValidarLimiteSucursal(salidaEnc.SucursalID, sumaDetalle, cancellationToken);
             if (!restriccionResult.IsSuccess)
@@ -85,17 +76,15 @@ public class SalidaEncCreateCommand
             }
 
             var insertarResultado = await _salidaService.RegistrarSalida(salidaEnc, cancellationToken);
-            if (!insertarResultado.IsSuccess)
-                return insertarResultado;
 
             return insertarResultado;
         }
     }
 
 
-    public class SalidaEncCreateCommandRequesttValidator : AbstractValidator<SalidaEncCreateCommandRequest>
+    public class SalidaEncCreateCommandRequestValidator : AbstractValidator<SalidaEncCreateCommandRequest>
     {
-        public SalidaEncCreateCommandRequesttValidator()
+        public SalidaEncCreateCommandRequestValidator()
         {
             RuleFor(x => x.salidaEncCreateRequest).SetValidator(new SalidaCreateValidator());
         }

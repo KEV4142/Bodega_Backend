@@ -21,3 +21,8 @@ public class DistribucionResultado
     public List<LoteCantidadListado> LotesValidos { get; set; } = [];
     public List<Lote> LotesDetalle { get; set; } = [];
 }
+public class SalidaDetConstruccionResultado
+{
+    public List<SalidaDet> SalidasDetalles { get; set; } = [];
+    public decimal Total { get; set; }
+}

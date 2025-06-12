@@ -35,7 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IProfileFactory, ProfileFactory>();
         services.AddScoped<IRoleTranslator, RoleTranslator>();
         services.AddScoped<IDistribuidorLotes, DistribuidorLotes>();
-
+        services.AddScoped<ISalidaDetListBuilder, SalidaDetListBuilder>();
 
         return services;
     }

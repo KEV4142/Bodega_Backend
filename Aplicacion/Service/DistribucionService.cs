@@ -1,31 +1,25 @@
-using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Salidas.SalidaCreate;
 using Aplicacion.Tablas.Salidas.SalidasResponse;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
 
 namespace Aplicacion.Service;
 
 public class DistribucionService : IDistribucionService
 {
-    private readonly BackendContext _backendContext;
-    private readonly IMapper _mapper;
+    private readonly ILoteService _loteService;
     private readonly IDistribuidorLotes _distribuidorLotes;
 
-    public DistribucionService(BackendContext context, IMapper mapper, IDistribuidorLotes distribuidorLotes)
+    public DistribucionService(ILoteService loteService, IDistribuidorLotes distribuidorLotes)
     {
-        _backendContext = context;
-        _mapper = mapper;
+        _loteService = loteService;
         _distribuidorLotes = distribuidorLotes;
     }
 
     public async Task<DistribucionResultado> ObtenerDistribucionAsync(List<SalidaDetRequest> detalles, CancellationToken cancellationToken)
     {
         var loteListaID = detalles.Select(linea => linea.LoteID).ToList();
-        var lotesDetalle = await _backendContext.Lotes!.Where(lote => loteListaID.Contains(lote.LoteID)).ToListAsync(cancellationToken);
+        var lotesDetalle = await _loteService.ObtenerLotesPorIDLista(loteListaID,cancellationToken);
+
         var productoCantidadAgrupado = detalles
             .Join(lotesDetalle, detalle => detalle.LoteID, lote => lote.LoteID, (detalle, lote) =>
                 new { ProductoID = lote.ProductoID, Cantidad = detalle.Cantidad })
@@ -40,11 +34,7 @@ public class DistribucionService : IDistribucionService
 
         foreach (var linea in productoCantidadAgrupado)
         {
-            var productosListado = await _backendContext.Lotes!
-                .Where(l => l.ProductoID == linea.ProductoID && l.Cantidad > 0)
-                .OrderBy(l => l.FechaVencimiento)
-                .ProjectTo<LoteCantidadListado>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+            var productosListado = await _loteService.ObtenerLotesDisponiblesParaProducto(linea.ProductoID,cancellationToken);
 
             var seleccionados = _distribuidorLotes.Distribuir(
                 productosListado,

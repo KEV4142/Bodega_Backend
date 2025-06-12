@@ -19,4 +19,15 @@ public class LoteRepository : ILoteRepository
             .OrderBy(l => l.FechaVencimiento)
             .ToListAsync();
     }
+    public async Task<List<Lote>> ObtenerLotesPorIDListaAsync(List<int> loteIDs, CancellationToken cancellationToken)
+    {
+        return await _backendContext.Lotes!.Where(l => loteIDs.Contains(l.LoteID)).ToListAsync(cancellationToken);
+    }
+    public async Task<List<Lote>> ObtenerLotesDisponiblesParaProductoAsync(int productoID, CancellationToken cancellationToken)
+    {
+        return await _backendContext.Lotes!
+            .Where(l => l.ProductoID == productoID && l.Cantidad > 0)
+            .OrderBy(l => l.FechaVencimiento)
+            .ToListAsync(cancellationToken);
+    }
 }
