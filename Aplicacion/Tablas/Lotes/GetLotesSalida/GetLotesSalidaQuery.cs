@@ -30,18 +30,18 @@ public class GetLotesSalidaQuery
             CancellationToken cancellationToken
         )
         {
-            var productoResultado = await _productoService.ObtenerProductoPorID(request.getLotesSalidaRequest.ProductoID);
+            var productoResultado = await _productoService.ObtenerProductoPorID(request.getLotesSalidaRequest.ProductoID, cancellationToken);
             if (!productoResultado.IsSuccess)
                 {return Result<List<LoteCompletoResponse>>.Failure(productoResultado.Error!, productoResultado.StatusCode);}
 
-            var productoDisponible = await _productoService.TieneInventarioDisponible(request.getLotesSalidaRequest.ProductoID,request.getLotesSalidaRequest.Cantidad);
+            var productoDisponible = await _productoService.TieneInventarioDisponible(request.getLotesSalidaRequest.ProductoID,cancellationToken);
 
             if (productoDisponible < request.getLotesSalidaRequest.Cantidad)
             {
                 return Result<List<LoteCompletoResponse>>.Failure($"No se tiene suficiente Inventario para la Salida({productoDisponible}).", HttpStatusCode.BadRequest);
             }
 
-            var productosListado = await _loteService.ObtenerLotesDisponiblesOrdenados(request.getLotesSalidaRequest.ProductoID);
+            var productosListado = await _loteService.ObtenerLotesDisponiblesOrdenados(request.getLotesSalidaRequest.ProductoID, cancellationToken);
 
             var productosSalida = new List<LoteCompletoResponse>();
 

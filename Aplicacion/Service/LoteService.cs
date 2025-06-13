@@ -18,9 +18,9 @@ public class LoteService : ILoteService
         _loteRepository = loteRepository;
         _mapper = mapper;
     }
-    public async Task<List<LoteCompletoResponse>> ObtenerLotesDisponiblesOrdenados(int productoID)
+    public async Task<List<LoteCompletoResponse>> ObtenerLotesDisponiblesOrdenados(int productoID, CancellationToken cancellationToken)
     {
-        var lotes = await _loteRepository.ObtenerLotesDisponiblesOrdenadosAsync(productoID);
+        var lotes = await _loteRepository.ObtenerLotesDisponiblesOrdenadosAsync(productoID, cancellationToken);
         return _mapper.Map<List<LoteCompletoResponse>>(lotes);
     }
 

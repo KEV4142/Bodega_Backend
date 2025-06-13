@@ -1,6 +1,5 @@
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Accounts;
-using Modelo.Custom;
 using Modelo.Entidades;
 using Seguridad.Interfaces;
 

@@ -69,5 +69,13 @@ public class SalidaEncRepository : ISalidaEncRepository
             return false;
         }
     }
+    public async Task<decimal> ObtenerTotalCostoPendientePorSucursalAsync(int sucursalID, CancellationToken ct)
+    {
+        return await _backendContext.SalidaEncs
+            .Where(se => se.SucursalID == sucursalID && se.Estado == "E")
+            .SelectMany(se => se.SalidaDets)
+            .Where(sd => sd.Lote != null)
+            .SumAsync(sd => (decimal?)(sd.Lote.Costo * sd.Cantidad), ct) ?? 0m;
+    }
 
 }

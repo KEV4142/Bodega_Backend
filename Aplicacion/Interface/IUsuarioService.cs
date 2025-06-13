@@ -5,5 +5,5 @@ namespace Aplicacion.Interface;
 
 public interface IUsuarioService
 {
-    Task<Result<Usuario>> ObtenerUsuarioActualAsync();
+    Task<Result<Usuario>> ObtenerUsuarioActualAsync(CancellationToken cancellationToken);
 }

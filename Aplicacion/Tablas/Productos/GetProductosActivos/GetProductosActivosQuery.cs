@@ -1,7 +1,6 @@
 using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Productos.DTOProductos;
-using AutoMapper;
 using MediatR;
 
 
@@ -15,12 +14,10 @@ public class GetProductosActivos
         : IRequestHandler<GetProductosActivasQueryRequest, Result<List<ProductoResponse>>>
     {
         private readonly IProductoService _productoService;
-        private readonly IMapper _mapper;
 
-        public GetProductosActivasQueryHandler(IProductoService productoService, IMapper mapper)
+        public GetProductosActivasQueryHandler(IProductoService productoService)
         {
             _productoService = productoService;
-            _mapper = mapper;
         }
 
         public async Task<Result<List<ProductoResponse>>> Handle(
@@ -29,9 +26,7 @@ public class GetProductosActivos
         )
         {
             var productoListado = await _productoService.ObtenerProductosActivos(cancellationToken);
-            var response = _mapper.Map<List<ProductoResponse>>(productoListado);
-
-            return Result<List<ProductoResponse>>.Success(response);
+            return productoListado;
         }
     }
 }

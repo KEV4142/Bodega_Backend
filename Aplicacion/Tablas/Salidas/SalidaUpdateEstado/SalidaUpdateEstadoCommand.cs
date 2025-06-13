@@ -24,7 +24,7 @@ public class SalidaUpdateEstadoCommand
             CancellationToken cancellationToken
         )
         {
-            var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync();
+            var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync(cancellationToken);
             if (!usuarioResult.IsSuccess)
             { return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode); }
             var usuario = usuarioResult.Value!;

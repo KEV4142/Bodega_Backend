@@ -1,25 +1,19 @@
 using Aplicacion.Core;
 using Aplicacion.Interface;
-using Microsoft.EntityFrameworkCore;
-using Persistencia;
 
 namespace Aplicacion.Service;
 
 public class RestriccionSalidaService : IRestriccionSalidaService
 {
-    private readonly BackendContext _backendContext;
+    private readonly ISalidaService _salidaService;
 
-    public RestriccionSalidaService(BackendContext context)
+    public RestriccionSalidaService(ISalidaService salidaService)
     {
-        _backendContext = context;
+        _salidaService = salidaService;
     }
     public async Task<Result<bool>> ValidarLimiteSucursal(int sucursalID, decimal sumaDetalle, CancellationToken ct)
     {
-        var total = await _backendContext.SalidaEncs
-            .Where(se => se.SucursalID == sucursalID && se.Estado == "E")
-            .SelectMany(se => se.SalidaDets)
-                .Where(sd => sd.Lote != null)
-                .SumAsync(sd => (decimal?)(sd.Lote.Costo * sd.Cantidad), ct) ?? 0m;
+        var total = await _salidaService.ObtenerTotalCostoPendientePorSucursal(sucursalID,ct);
 
         if (total > 5000)
             {return Result<bool>.Failure($" No se puede ingresar la orden de Salida dado que se ha acumulado y la Sucursal no las ha recibido. ({total}) ");}

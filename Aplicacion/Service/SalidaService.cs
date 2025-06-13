@@ -50,4 +50,9 @@ public class SalidaService : ISalidaService
     {
         return _salidaEncRepository.GetQueryable();
     }
+
+    public async Task<decimal> ObtenerTotalCostoPendientePorSucursal(int sucursalID, CancellationToken cancellationToken)
+    {
+        return await _salidaEncRepository.ObtenerTotalCostoPendientePorSucursalAsync(sucursalID,cancellationToken);
+    }
 }

@@ -12,12 +12,12 @@ public class LoteRepository : ILoteRepository
     {
         _backendContext = context;
     }
-    public async Task<List<Lote>> ObtenerLotesDisponiblesOrdenadosAsync(int productoID)
+    public async Task<List<Lote>> ObtenerLotesDisponiblesOrdenadosAsync(int productoID, CancellationToken cancellationToken)
     {
         return await _backendContext.Lotes!
             .Where(lote => lote.ProductoID == productoID && lote.Cantidad > 0)
             .OrderBy(l => l.FechaVencimiento)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
     public async Task<List<Lote>> ObtenerLotesPorIDListaAsync(List<int> loteIDs, CancellationToken cancellationToken)
     {

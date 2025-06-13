@@ -1,7 +1,6 @@
 using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Sucursales.DTOSucursales;
-using AutoMapper;
 using MediatR;
 
 namespace Aplicacion.Tablas.Sucursales.GetSucursalesActivas;
@@ -15,12 +14,10 @@ public class GetSucursalesActivas
         : IRequestHandler<GetSucursalesActivasQueryRequest, Result<List<SucursalResponse>>>
     {
         private readonly ISucursalService _sucursalService;
-        private readonly IMapper _mapper;
 
-        public GetSucursalesActivasQueryHandler(ISucursalService sucursalService, IMapper mapper)
+        public GetSucursalesActivasQueryHandler(ISucursalService sucursalService)
         {
             _sucursalService = sucursalService;
-            _mapper = mapper;
         }
 
         public async Task<Result<List<SucursalResponse>>> Handle(
@@ -29,9 +26,8 @@ public class GetSucursalesActivas
         )
         {
             var listaSucursales = await _sucursalService.ObtenerSucursalesActivas(cancellationToken);
-            var sucursales = _mapper.Map<List<SucursalResponse>>(listaSucursales);
 
-            return Result<List<SucursalResponse>>.Success(sucursales);
+            return listaSucursales;
         }
     }
 }

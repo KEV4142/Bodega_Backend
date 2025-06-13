@@ -12,15 +12,15 @@ public class ProductoRepository : IProductoRepository
     {
         _backendContext = context;
     }
-    public async Task<Producto?> ObtenerPorIDAsync(int productoID)
+    public async Task<Producto?> ObtenerPorIDAsync(int productoID, CancellationToken cancellationToken)
     {
-        return await _backendContext.Productos!.FirstOrDefaultAsync(p => p.ProductoID == productoID);
+        return await _backendContext.Productos!.FirstOrDefaultAsync(p => p.ProductoID == productoID, cancellationToken);
     }
-    public async Task<int> ObtenerInventarioDisponibleAsync(int productoID)
+    public async Task<int> ObtenerInventarioDisponibleAsync(int productoID, CancellationToken cancellationToken)
     {
         return await _backendContext.Lotes!
             .Where(l => l.ProductoID == productoID)
-            .SumAsync(l => (int?)l.Cantidad) ?? 0;
+            .SumAsync(l => (int?)l.Cantidad, cancellationToken) ?? 0;
     }
     public async Task<List<Producto>> ObtenerProductosActivosAsync(CancellationToken cancellationToken)
     {

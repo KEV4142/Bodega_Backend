@@ -32,7 +32,7 @@ public class SalidaEncCreateCommand
 
         public async Task<Result<int>> Handle(SalidaEncCreateCommandRequest request, CancellationToken cancellationToken)
         {
-            var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync();
+            var usuarioResult = await _usuarioService.ObtenerUsuarioActualAsync(cancellationToken);
             if (!usuarioResult.IsSuccess)
             { return Result<int>.Failure(usuarioResult.Error!, usuarioResult.StatusCode); }
             var usuario = usuarioResult.Value!;
@@ -43,7 +43,7 @@ public class SalidaEncCreateCommand
                 SucursalID = request.salidaEncCreateRequest.SucursalID,
                 UsuarioID = usuario.Id
             };
-            var sucursalResultado = await _sucursalService.ObtenerSucursalPorID(request.salidaEncCreateRequest.SucursalID);
+            var sucursalResultado = await _sucursalService.ObtenerSucursalPorID(request.salidaEncCreateRequest.SucursalID, cancellationToken);
             if (!sucursalResultado.IsSuccess)
             { return Result<int>.Failure(sucursalResultado.Error!, HttpStatusCode.NotFound); }
 
@@ -52,8 +52,6 @@ public class SalidaEncCreateCommand
             var distribucion = await _distribucionService.ObtenerDistribucionAsync(request.salidaEncCreateRequest.SalidasDetalle, cancellationToken);
             var lotesDetalle = distribucion.LotesDetalle;
             var lotesValidos = distribucion.LotesValidos;
-
-            decimal sumaDetalle = 0;
 
             var resultadoDetalle = _salidaDetListBuilder.Construir(
                                         request.salidaEncCreateRequest.SalidasDetalle,
@@ -66,7 +64,7 @@ public class SalidaEncCreateCommand
                 return Result<int>.Failure(resultadoDetalle.Error!, resultadoDetalle.StatusCode);
 
             salidaEnc.SalidaDets = resultadoDetalle.Value!.SalidasDetalles;
-            sumaDetalle = resultadoDetalle.Value.Total;
+            decimal sumaDetalle = resultadoDetalle.Value.Total;
 
 
             var restriccionResult = await _restriccionSalidaService.ValidarLimiteSucursal(salidaEnc.SucursalID, sumaDetalle, cancellationToken);

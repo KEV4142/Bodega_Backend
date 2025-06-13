@@ -18,13 +18,13 @@ public class UsuarioService : IUsuarioService
         _userManager = userManager;
     }
 
-    public async Task<Result<Usuario>> ObtenerUsuarioActualAsync()
+    public async Task<Result<Usuario>> ObtenerUsuarioActualAsync(CancellationToken cancellationToken)
     {
         var usuarioID = _userAccessor.GetUserId();
         if (string.IsNullOrEmpty(usuarioID))
             {return Result<Usuario>.Failure("No se encontró el UsuarioID en la Autorización.", HttpStatusCode.Unauthorized);}
 
-        var usuario = await _userManager.Users!.FirstOrDefaultAsync(x => x.Id == usuarioID);
+        var usuario = await _userManager.Users!.FirstOrDefaultAsync(x => x.Id == usuarioID, cancellationToken);
         if (usuario is null)
             return Result<Usuario>.Failure("No se encontró el Usuario.", HttpStatusCode.NotFound);
 

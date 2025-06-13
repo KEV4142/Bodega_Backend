@@ -1,11 +1,7 @@
 using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Productos.DTOProductos;
-using AutoMapper;
 using MediatR;
-
-
-
 
 namespace Aplicacion.Tablas.Productos.GetProducto;
 public class GetProductoQuery
@@ -17,12 +13,10 @@ public class GetProductoQuery
     internal class GetProductoQueryHandler : IRequestHandler<GetProductoQueryRequest, Result<ProductoResponse>>
     {
         private readonly IProductoService _productoService;
-        private readonly IMapper _mapper;
 
-        public GetProductoQueryHandler(IProductoService productoService, IMapper mapper)
+        public GetProductoQueryHandler(IProductoService productoService)
         {
             _productoService = productoService;
-            _mapper = mapper;
         }
 
         public async Task<Result<ProductoResponse>> Handle(
@@ -30,15 +24,14 @@ public class GetProductoQuery
             CancellationToken cancellationToken
         )
         {
-            var producto = await _productoService.ObtenerProductoPorID(request.ProductoID);
+            var producto = await _productoService.ObtenerProductoPorIDResponse(request.ProductoID,cancellationToken);
 
             if (!producto.IsSuccess)
             {
                 return Result<ProductoResponse>.Failure(producto.Error!, producto.StatusCode);
             }
-            var productoDTO = _mapper.Map<ProductoResponse>(producto.Value);
 
-            return Result<ProductoResponse>.Success(productoDTO);
+            return Result<ProductoResponse>.Success(producto.Value!);
         }
 
 

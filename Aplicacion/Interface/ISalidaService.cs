@@ -9,4 +9,5 @@ public interface ISalidaService
     Task<Result<int>> CambiarEstadoSalida(SalidaEnc salida, string nuevoEstado, string usuarioID, CancellationToken cancellationToken);
     Task<Result<int>> RegistrarSalida(SalidaEnc salidaEnc, CancellationToken cancellationToken);
     IQueryable<SalidaEnc> GetQueryable();
+    Task<decimal> ObtenerTotalCostoPendientePorSucursal(int sucursalID, CancellationToken cancellationToken);
 }

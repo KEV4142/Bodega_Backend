@@ -12,14 +12,14 @@ public class SucursalRepository : ISucursalRepository
     {
         _backendContext = context;
     }
-    public async Task<Sucursal?> ObtenerPorIDAsync(int sucursalID)
+    public async Task<Sucursal?> ObtenerPorIDAsync(int sucursalID, CancellationToken cancellationToken)
     {
-        return await _backendContext.Sucursales!.FirstOrDefaultAsync(s => s.SucursalID == sucursalID);
+        return await _backendContext.Sucursales!.FirstOrDefaultAsync(s => s.SucursalID == sucursalID, cancellationToken);
     }
     public async Task<List<Sucursal>> ObtenerSucursalesActivasAsync(CancellationToken cancellationToken)
     {
         return await _backendContext.Sucursales!
-            .Where(s => s.Estado != null && s.Estado.Equals("A", StringComparison.OrdinalIgnoreCase))
+            .Where(s => s.Estado != null && s.Estado.ToUpper().Equals("A"))
             .ToListAsync(cancellationToken);
     }
 
