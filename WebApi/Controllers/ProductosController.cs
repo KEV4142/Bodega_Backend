@@ -3,6 +3,7 @@ using Aplicacion.Tablas.Productos.DTOProductos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Modelo.Custom;
 using static Aplicacion.Tablas.Productos.GetProducto.GetProductoQuery;
 using static Aplicacion.Tablas.Productos.GetProductosActivos.GetProductosActivos;
@@ -26,6 +27,7 @@ public class ProductosController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [OutputCache(Duration = 60)]
     public async Task<ActionResult<ProductoResponse>> ProductoGet(
         int id,
         CancellationToken cancellationToken
@@ -41,6 +43,7 @@ public class ProductosController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [OutputCache(Duration = 60)]
     public async Task<ActionResult<ProductoResponse>> GetProductosActivos(
         CancellationToken cancellationToken
     )

@@ -3,6 +3,7 @@ using Aplicacion.Tablas.Sucursales.DTOSucursales;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Modelo.Custom;
 using static Aplicacion.Tablas.Sucursales.GetSucursalesActivas.GetSucursalesActivas;
 
@@ -17,12 +18,13 @@ public class SucursalesController:ControllerBase
     {
         _sender = sender;
     }
-    
+
     [Authorize(Roles = CustomRoles.ADMINBODEGA)]
     [HttpGet("activos")]
     [ProducesResponseType((int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [OutputCache(Duration = 60)]
     public async Task<ActionResult<SucursalResponse>> GetSucursalesActivos(
         CancellationToken cancellationToken
     )

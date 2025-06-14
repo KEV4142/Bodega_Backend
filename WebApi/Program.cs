@@ -57,6 +57,7 @@ if (string.IsNullOrEmpty(port))
 Console.WriteLine($"Servidor iniciando en el puerto: {port}");
 builder.WebHost.UseUrls($"http://*:{port}");
 
+builder.Services.AddOutputCache();
 
 var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
@@ -72,5 +73,5 @@ app.UseAuthorization();
 app.UseCors("corsapp");
 app.MapControllers();
 
-
+app.UseOutputCache();
 app.Run();

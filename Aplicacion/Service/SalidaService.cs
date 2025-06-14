@@ -28,7 +28,9 @@ public class SalidaService : ISalidaService
     {
         if (salida.Estado.Equals("R", StringComparison.OrdinalIgnoreCase))
             return Result<int>.Failure("La Orden de Salida ya ha sido recibida.", HttpStatusCode.BadRequest);
-
+        if (salida.Fecha >= salida.FechaRecibido)
+            return Result<int>.Failure("La fecha de recibido debe ser mayor que la fecha de emisión.", HttpStatusCode.BadRequest);
+            
         var resultado = await _salidaEncRepository.ActualizarEstadoAsync(salida, nuevoEstado, usuarioID, cancellationToken);
 
         if (!resultado)
