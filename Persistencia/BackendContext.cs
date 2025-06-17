@@ -168,47 +168,48 @@ public partial class BackendContext : IdentityDbContext<Usuario>
                 {
                     tb.HasCheckConstraint("ckUsuarioEstado", "Estado IN('A','I','B')");
                 });
-        });         
+        });
+        if (!Database.IsInMemory())
+        {
+            modelBuilder.Entity<IdentityRole>().HasData(
+                    new IdentityRole
+                    {
+                        Id = adminRoleId,
+                        Name = CustomRoles.ADMINBODEGA,
+                        NormalizedName = CustomRoles.ADMINBODEGA
+                    },
+                    new IdentityRole
+                    {
+                        Id = clientRoleId,
+                        Name = CustomRoles.CLIENT,
+                        NormalizedName = CustomRoles.CLIENT
+                    }
+                );
 
-        modelBuilder.Entity<IdentityRole>().HasData(
-                new IdentityRole
-                {
-                    Id = adminRoleId,
-                    Name = CustomRoles.ADMINBODEGA,
-                    NormalizedName = CustomRoles.ADMINBODEGA
-                },
-                new IdentityRole
-                {
-                    Id = clientRoleId,
-                    Name = CustomRoles.CLIENT,
-                    NormalizedName = CustomRoles.CLIENT
-                }
+            modelBuilder.Entity<Sucursal>().HasData(
+                new Sucursal { SucursalID = 1, Descripcion = "CENTRO", Direccion = "BO. CENTRO", Estado = "A" },
+                new Sucursal { SucursalID = 2, Descripcion = "ALTARA", Direccion = "MALL ALTARA", Estado = "A" },
+                new Sucursal { SucursalID = 3, Descripcion = "GALERIAS", Direccion = "MALL GALERIAS DEL VALLE", Estado = "A" },
+                new Sucursal { SucursalID = 4, Descripcion = "MEGAMALL", Direccion = "MALL MEGAMALL", Estado = "A" }
             );
 
-        modelBuilder.Entity<Sucursal>().HasData(
-            new Sucursal { SucursalID = 1, Descripcion = "CENTRO", Direccion = "BO. CENTRO" },
-            new Sucursal { SucursalID = 2, Descripcion = "ALTARA", Direccion = "MALL ALTARA" },
-            new Sucursal { SucursalID = 3, Descripcion = "GALERIAS", Direccion = "MALL GALERIAS DEL VALLE" },
-            new Sucursal { SucursalID = 4, Descripcion = "MEGAMALL", Direccion = "MALL MEGAMALL" }
-        );
+            modelBuilder.Entity<Producto>().HasData(
+                new Producto { ProductoID = 1, Descripcion = "ALKAZERSER", Estado = "A" },
+                new Producto { ProductoID = 2, Descripcion = "JARABE PARA LA TOS", Estado = "A" },
+                new Producto { ProductoID = 3, Descripcion = "PANADOL", Estado = "A" }
+            );
 
-        modelBuilder.Entity<Producto>().HasData(
-            new Producto { ProductoID = 1, Descripcion = "ALKAZERSER" },
-            new Producto { ProductoID = 2, Descripcion = "JARABE PARA LA TOS" },
-            new Producto { ProductoID = 3, Descripcion = "PANADOL" }
-        );
-
-        modelBuilder.Entity<Lote>().HasData(
-            new Lote { LoteID = 1, ProductoID = 1, FechaVencimiento = new DateOnly(2027, 10, 1), Costo = 10, Cantidad = 100 },
-            new Lote { LoteID = 2, ProductoID = 1, FechaVencimiento = new DateOnly(2025, 11, 1), Costo = 10, Cantidad = 50 },
-            new Lote { LoteID = 3, ProductoID = 1, FechaVencimiento = new DateOnly(2026, 12, 1), Costo = 10, Cantidad = 100 },
-            new Lote { LoteID = 4, ProductoID = 2, FechaVencimiento = new DateOnly(2027, 1, 1), Costo = 100, Cantidad = 500 },
-            new Lote { LoteID = 5, ProductoID = 2, FechaVencimiento = new DateOnly(2027, 2, 1), Costo = 100, Cantidad = 500 },
-            new Lote { LoteID = 6, ProductoID = 2, FechaVencimiento = new DateOnly(2025, 12, 1), Costo = 100, Cantidad = 250 },
-            new Lote { LoteID = 7, ProductoID = 3, FechaVencimiento = new DateOnly(2025, 11, 1), Costo = 25, Cantidad = 0 },
-            new Lote { LoteID = 8, ProductoID = 3, FechaVencimiento = new DateOnly(2025, 12, 1), Costo = 25, Cantidad = 100 }
-        );
-
+            modelBuilder.Entity<Lote>().HasData(
+                new Lote { LoteID = 1, ProductoID = 1, FechaVencimiento = new DateOnly(2027, 10, 1), Costo = 10, Cantidad = 100, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 2, ProductoID = 1, FechaVencimiento = new DateOnly(2025, 11, 1), Costo = 10, Cantidad = 50, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 3, ProductoID = 1, FechaVencimiento = new DateOnly(2026, 12, 1), Costo = 10, Cantidad = 100, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 4, ProductoID = 2, FechaVencimiento = new DateOnly(2027, 1, 1), Costo = 100, Cantidad = 500, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 5, ProductoID = 2, FechaVencimiento = new DateOnly(2027, 2, 1), Costo = 100, Cantidad = 500, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 6, ProductoID = 2, FechaVencimiento = new DateOnly(2025, 12, 1), Costo = 100, Cantidad = 250, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 7, ProductoID = 3, FechaVencimiento = new DateOnly(2025, 11, 1), Costo = 25, Cantidad = 0, CampoConcurrencia = new byte[] { 1 } },
+                new Lote { LoteID = 8, ProductoID = 3, FechaVencimiento = new DateOnly(2025, 12, 1), Costo = 25, Cantidad = 100, CampoConcurrencia = new byte[] { 1 } }
+            );
+        }
         base.OnModelCreating(modelBuilder);
     }
 
