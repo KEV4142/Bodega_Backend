@@ -19,6 +19,11 @@ public class SucursalesController:ControllerBase
         _sender = sender;
     }
 
+    /// <summary>
+    /// Brinda informacion de las Sucursales activas en Listado.
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelacion por tiempo de espera.</param>
+    /// <returns>Un DTO Listado  de SucursalResponse.</returns>
     [Authorize(Roles = CustomRoles.ADMINBODEGA)]
     [HttpGet("activos")]
     [ProducesResponseType((int)HttpStatusCode.OK)]

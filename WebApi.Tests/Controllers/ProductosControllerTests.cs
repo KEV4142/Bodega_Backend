@@ -7,6 +7,7 @@ using WebApi.Controllers;
 using Aplicacion.Tablas.Productos.DTOProductos;
 using Aplicacion.Core;
 using static Aplicacion.Tablas.Productos.GetProducto.GetProductoQuery;
+using static Aplicacion.Tablas.Productos.GetProductosActivos.GetProductosActivos;
 
 namespace WebApi.Tests.Controllers
 {
@@ -61,6 +62,45 @@ namespace WebApi.Tests.Controllers
             var statusResult = response.Result as ObjectResult;
             Assert.That(statusResult, Is.Not.Null);
             Assert.That(statusResult?.StatusCode, Is.EqualTo((int)HttpStatusCode.NotFound));
+        }
+
+        [Test]
+        public async Task GetProductosActivos_DevuelveOk_SiExitoso()
+        {
+            // Arrange
+            var productos = _fixture.Create<List<ProductoResponse>>();
+            var resultado = Result<List<ProductoResponse>>.Success(productos);
+
+            _mockSender
+                .Setup(x => x.Send(It.IsAny<GetProductosActivasQueryRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(resultado);
+
+            // Act
+            var response = await _controller.GetProductosActivos(CancellationToken.None);
+
+            // Assert
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var ok = response.Result as OkObjectResult;
+            Assert.That(ok?.Value, Is.EqualTo(productos));
+        }
+
+        [Test]
+        public async Task GetProductosActivos_DevuelveError_SiFalla()
+        {
+            // Arrange
+            var resultado = Result<List<ProductoResponse>>.Failure("Error interno", HttpStatusCode.InternalServerError);
+
+            _mockSender
+                .Setup(x => x.Send(It.IsAny<GetProductosActivasQueryRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(resultado);
+
+            // Act
+            var response = await _controller.GetProductosActivos(CancellationToken.None);
+
+            // Assert
+            var statusResult = response.Result as ObjectResult;
+            Assert.That(statusResult, Is.Not.Null);
+            Assert.That(statusResult?.StatusCode, Is.EqualTo((int)HttpStatusCode.InternalServerError));
         }
     }
 }

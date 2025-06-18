@@ -21,6 +21,12 @@ public class ProductosController : ControllerBase
         _sender = sender;
     }
 
+    /// <summary>
+    /// Brinda informacion del Producto solicitado por el parametro ID.
+    /// </summary>
+    /// <param name="id">Parametros claves (id).</param>
+    /// <param name="cancellationToken">Token de cancelacion por tiempo de espera.</param>
+    /// <returns>Un DTO ProductoResponse.</returns>
     [Authorize(Roles = CustomRoles.ADMINBODEGA)]
     [HttpGet("{id}")]
     [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -38,6 +44,11 @@ public class ProductosController : ControllerBase
         return resultado.IsSuccess ? Ok(resultado.Value) : StatusCode((int)resultado.StatusCode, resultado);
     }
 
+    /// <summary>
+    /// Brinda informacion de los Productos activos en Listado.
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelacion por tiempo de espera.</param>
+    /// <returns>Un DTO Listado  de ProductoResponse.</returns>
     [Authorize(Roles = CustomRoles.ADMINBODEGA)]
     [HttpGet("activos")]
     [ProducesResponseType((int)HttpStatusCode.OK)]
