@@ -1,3 +1,4 @@
+using System.Net;
 using Aplicacion.Core;
 using Aplicacion.Interface;
 using Aplicacion.Tablas.Sucursales.DTOSucursales;
@@ -21,7 +22,7 @@ public class SucursalService : ISucursalService
     {
         var sucursal = await _sucursalRepository.ObtenerPorIDAsync(sucursalID, cancellationToken);
         if (sucursal is null)
-            return Result<Sucursal>.Failure("No se encontró la sucursal.");
+            return Result<Sucursal>.Failure("No se encontró la sucursal.", HttpStatusCode.NotFound);
 
         return Result<Sucursal>.Success(sucursal);
     }
@@ -29,7 +30,7 @@ public class SucursalService : ISucursalService
     {
         var sucursal = await _sucursalRepository.ObtenerPorIDAsync(sucursalID, cancellationToken);
         if (sucursal is null)
-            return Result<SucursalResponse>.Failure("No se encontró la sucursal.");
+            return Result<SucursalResponse>.Failure("No se encontró la sucursal.", HttpStatusCode.NotFound);
         var sucursalDTO = _mapper.Map<SucursalResponse>(sucursal);
 
         return Result<SucursalResponse>.Success(sucursalDTO);
