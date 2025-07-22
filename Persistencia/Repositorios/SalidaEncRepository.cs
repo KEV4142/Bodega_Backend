@@ -9,11 +9,13 @@ public class SalidaEncRepository : ISalidaEncRepository
 {
     private readonly BackendContext _backendContext;
     private readonly ILogger<SalidaEncRepository> _logger;
+    private readonly bool _soportaTransacciones;
 
-    public SalidaEncRepository(BackendContext context, ILogger<SalidaEncRepository> logger)
+    public SalidaEncRepository(BackendContext context, ILogger<SalidaEncRepository> logger, bool soportaTransacciones = true)
     {
         _backendContext = context;
         _logger = logger;
+        _soportaTransacciones = soportaTransacciones;
     }
     public async Task<SalidaEnc?> ObtenerPorIDAsync(int salidaID, CancellationToken cancellationToken)
     {
@@ -46,6 +48,13 @@ public class SalidaEncRepository : ISalidaEncRepository
     {
         try
         {
+            if (!_soportaTransacciones)
+            {
+                _backendContext.Add(salidaEnc);
+                await _backendContext.SaveChangesAsync(cancellationToken);
+                return true;
+            }
+
             await using var transaction = await _backendContext.Database.BeginTransactionAsync(cancellationToken);
 
             _backendContext.Add(salidaEnc);
