@@ -53,7 +53,7 @@ public class SalidaEncRepositoryTests
         _context.SaveChanges();
 
         var logger = new LoggerFactory().CreateLogger<SalidaEncRepository>();
-        _repository = new SalidaEncRepository(_context, logger,false);
+        _repository = new SalidaEncRepository(_context, logger, false);
     }
 
     [TearDown]
@@ -95,4 +95,38 @@ public class SalidaEncRepositoryTests
         Assert.That(insertado!.SalidaDets.Count, Is.EqualTo(1));
         Assert.That(insertado.SalidaDets.First().Cantidad, Is.EqualTo(5));
     }
+
+    [Test]
+    public async Task ObtenerPorIDAsync_DebeRetornarNullCuandoNoExiste()
+    {
+        // Act
+        var resultado = await _repository.ObtenerPorIDAsync(999, CancellationToken.None);
+
+        // Assert
+        Assert.That(resultado, Is.Null);
+    }
+    [Test]
+    public async Task ObtenerPorIDAsync_DebeRetornarSalidaEncCuandoExiste()
+    {
+        // Arrange
+        var salida = new SalidaEnc
+        {
+            SalidaID = 200,
+            SucursalID = 1,
+            UsuarioID = "usuario prueba",
+            Estado = "E",
+            Fecha = DateTime.UtcNow
+        };
+        _context.SalidaEncs!.Add(salida);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var resultado = await _repository.ObtenerPorIDAsync(200, CancellationToken.None);
+
+        // Assert
+        Assert.That(resultado, Is.Not.Null);
+        Assert.That(resultado!.SalidaID, Is.EqualTo(200));
+        Assert.That(resultado.UsuarioID, Is.EqualTo("usuario prueba"));
+    }
+
 }
