@@ -29,6 +29,12 @@ public class SalidaEncRepository : ISalidaEncRepository
 
         try
         {
+            if (!_soportaTransacciones)
+            {
+                await _backendContext.SaveChangesAsync(cancellationToken);
+                return true;
+            }
+
             await using var transaction = await _backendContext.Database.BeginTransactionAsync(cancellationToken);
             await _backendContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);

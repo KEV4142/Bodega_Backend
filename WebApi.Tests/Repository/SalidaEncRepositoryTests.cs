@@ -128,5 +128,33 @@ public class SalidaEncRepositoryTests
         Assert.That(resultado!.SalidaID, Is.EqualTo(200));
         Assert.That(resultado.UsuarioID, Is.EqualTo("usuario prueba"));
     }
+    [Test]
+    public async Task ActualizarEstadoAsync_DebeActualizarCorrectamente()
+    {
+        // Arrange
+        var salida = new SalidaEnc
+        {
+            SalidaID = 300,
+            SucursalID = 1,
+            UsuarioID = "usuario abc ID",
+            Estado = "E",
+            Fecha = DateTime.UtcNow
+        };
+        _context.SalidaEncs!.Add(salida);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var resultado = await _repository.ActualizarEstadoAsync(salida, "R", "usuario Recibe", CancellationToken.None);
+
+        // Assert
+        Assert.That(resultado, Is.True);
+
+        var actualizado = await _context.SalidaEncs.FirstOrDefaultAsync(se => se.SalidaID == 300);
+        Assert.That(actualizado, Is.Not.Null);
+        Assert.That(actualizado!.Estado, Is.EqualTo("R"));
+        Assert.That(actualizado.UsuarioRecibe, Is.EqualTo("usuario Recibe"));
+        Assert.That(actualizado.FechaRecibido, Is.Not.Null);
+        Assert.That(actualizado.FechaRecibido.Value.Date, Is.EqualTo(DateTime.Now.Date));
+    }
 
 }
