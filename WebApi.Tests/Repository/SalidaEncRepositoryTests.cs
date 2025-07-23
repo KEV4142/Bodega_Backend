@@ -156,5 +156,97 @@ public class SalidaEncRepositoryTests
         Assert.That(actualizado.FechaRecibido, Is.Not.Null);
         Assert.That(actualizado.FechaRecibido.Value.Date, Is.EqualTo(DateTime.Now.Date));
     }
+    [Test]
+    public async Task ObtenerTotalCostoPendientePorSucursalAsync_DebeRetornarSumaCorrecta()
+    {
+        // Arrange
+        var salida1 = new SalidaEnc
+        {
+            SalidaID = 500,
+            SucursalID = 1,
+            UsuarioID = "usuario Prueba",
+            Estado = "E",
+            Fecha = DateTime.UtcNow,
+            SalidaDets = new List<SalidaDet>
+        {
+            new SalidaDet
+            {
+                LoteID = 10,
+                Cantidad = 3,
+                Costo = 30,
+                Lote = (await _context.Lotes.FindAsync(10))!
+            }
+        }
+        };
+
+        var salida2 = new SalidaEnc
+        {
+            SalidaID = 501,
+            SucursalID = 1,
+            UsuarioID = "usuario Prueba",
+            Estado = "R",
+            Fecha = DateTime.UtcNow,
+            SalidaDets = new List<SalidaDet>
+        {
+            new SalidaDet
+            {
+                LoteID = 10,
+                Cantidad = 3,
+                Costo = 20,
+                Lote = (await _context.Lotes.FindAsync(10))!
+            }
+        }
+        };
+
+        _context.SalidaEncs.AddRange(salida1, salida2);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var total = await _repository.ObtenerTotalCostoPendientePorSucursalAsync(1, CancellationToken.None);
+
+        // Assert
+        Assert.That(total, Is.EqualTo(90));
+    }
+    [Test]
+    public async Task ObtenerTotalCostoPendientePorSucursalAsync_DebeRetornarCero_SiNoHaySalidasConEstadoE()
+    {
+        var salida = new SalidaEnc
+        {
+            SalidaID = 600,
+            SucursalID = 1,
+            UsuarioID = "usuario Prueba ABC",
+            Estado = "R",
+            Fecha = DateTime.UtcNow,
+            SalidaDets = new List<SalidaDet>
+        {
+            new SalidaDet
+            {
+                LoteID = 10,
+                Cantidad = 3,
+                Costo = 20,
+                Lote = (await _context.Lotes.FindAsync(10))!
+            }
+        }
+        };
+
+        _context.SalidaEncs.Add(salida);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var total = await _repository.ObtenerTotalCostoPendientePorSucursalAsync(1, CancellationToken.None);
+
+        // Assert
+        Assert.That(total, Is.EqualTo(0m));
+    }
+    [Test]
+    public async Task ObtenerTotalCostoPendientePorSucursalAsync_DebeRetornarCero_SiNoHaySalidasParaSucursal()
+    {
+        // Act
+        var total = await _repository.ObtenerTotalCostoPendientePorSucursalAsync(999, CancellationToken.None);
+
+        // Assert
+        Assert.That(total, Is.EqualTo(0m));
+    }
+
 
 }
